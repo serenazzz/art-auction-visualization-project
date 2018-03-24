@@ -1,0 +1,20 @@
+---
+title: "Art Project EDAV"
+author: "Alexandra Sudomoeva, Elizabet Doliar, Serena, Basil"
+date: "3/23/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+ Reading the file 
+ 
+```{r}
+art = read.csv("sothebys_data.csv")
+```
+
+```{r}
+summary(art)
+```
