@@ -9,10 +9,28 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+## Data Quality Analysis
+
  Reading the file 
  
 ```{r}
-art = read.csv("sothebys_data.csv")
+art = read.csv("sothebys_data.csv", na.strings=c(""," ","NA"))
+```
+
+Let us start by looking at all the missing values and if there are any patterns. 
+
+```{r}
+#Replace (Other) with NA for consistency
+art_clean <- lapply(art, gsub, pattern='(Other)', replacement=NA)
+#Save as a data frame
+art_df <- as_data_frame(art_clean)
+
+art_final <- art_df %>% gather(date, value) %>% mutate(missing = ifelse(is.na(value), "yes", "no"))
+ggplot(art_final, aes(x = date, y = fct_rev(id), fill = missing)) +
+  geom_tile(color = "white") + 
+  ggtitle("Art Data with NAs") +
+  #scale_fill_viridis() +
+  theme_bw()
 ```
 
 ```{r}
