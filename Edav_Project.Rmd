@@ -1,7 +1,7 @@
 ---
 title: "Art Project EDAV"
 author: "Alexandra Sudomoeva, Elizabet Doliar, Serena, Basil"
-date: "3/23/2018"
+date: "4/13/2018"
 output: html_document
 ---
 
@@ -11,28 +11,43 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Data Quality Analysis
 
- Reading the file 
- 
+ Reading the file
+
 ```{r}
-art = read.csv("sothebys_data.csv", na.strings=c(""," ","NA"))
+art = read.csv("final_sothebys.csv", header=TRUE, na.strings=c("", NA))
+
+#Replace (Other) with NA for consistency <-not sure if we need this any longer
+art_clean <- lapply(art, gsub, pattern='(Other)', replacement=NA)
 ```
 
-Let us start by looking at all the missing values and if there are any patterns. 
+Let us start by looking at all the missing values and if there are any patterns.
+Since we have quite a big dataset, we will aggregate the count of missing values by auction house first.
 
 ```{r}
-#Replace (Other) with NA for consistency
-art_clean <- lapply(art, gsub, pattern='(Other)', replacement=NA)
 #Save as a data frame
 art_df <- as_data_frame(art_clean)
 
-art_final <- art_df %>% gather(date, value) %>% mutate(missing = ifelse(is.na(value), "yes", "no"))
-ggplot(art_final, aes(x = date, y = fct_rev(id), fill = missing)) +
-  geom_tile(color = "white") + 
+art_final <- art_df %>% gather(attribute, value, -X, -Unnamed..0, -auction_id, -location) %>% mutate(missing = ifelse(is.na(value), "yes", "no"))
+ggplot(art_final, aes(x = fct_rev(location), y = attribute, fill = missing)) +
+  geom_tile(color = "white") +
   ggtitle("Art Data with NAs") +
-  #scale_fill_viridis() +
+#  #scale_fill_viridis() +
   theme_bw()
 ```
 
 ```{r}
-summary(art)
+#install.packages("skimr")
+art_table <- art_df[-c(1:4)]
+art_percent <- skimr::skim(art_table) %>% filter(stat == "missing") %>%
+  arrange(desc(value)) %>% select(variable, value) %>% mutate(percent = value/nrow(art_table))
+art_percent
+```
+```{r}
+art_location <- art_df[-c(1:4)]
+art_location_tab <- art_location %>% gather(attribute, value, -location)
+percent_missing <- art_location_tab %>% group_by(location) %>%
+  summarise(num_na = sum(is.na(value))) %>%
+  mutate(percent_na = num_na/2711)%>%
+  arrange(-percent_na)
+percent_missing
 ```
