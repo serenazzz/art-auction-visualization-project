@@ -1,6 +1,6 @@
 ---
 title: "Art Project EDAV"
-author: "Alexandra Sudomoeva, Elizabet Doliar, Serena Zheng, Basil"
+author: "Alexandra Sudomoeva, Elizabet Doliar, Serena Zhang, Basil Vetas"
 date: "4/13/2018"
 output: html_document
 ---
@@ -106,7 +106,7 @@ One important observation we will need to be careful about during further analys
 
 ```{r fig.width=4}
 #install.packages("viridis")
-#library(viridis)
+library(viridis)
 art_location <- art_df %>% gather(attribute, value, -location) %>% mutate(missing = ifelse(is.na(value), "yes", "no"))
 ggplot(art_location, aes(x = location, y = attribute, fill = missing)) +
   geom_tile(color = "white") + 
