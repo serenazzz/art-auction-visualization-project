@@ -1,0 +1,80 @@
+---
+title: "Exploratory_Analysis"
+author: "Serena Zhang"
+date: "4/16/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      warning = FALSE,
+                      message = FALSE, 
+                      cache = TRUE)
+library(tidyverse)
+library(lattice)
+library(DAAG)
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+library(gridExtra)
+library(grid)
+```
+## Reading Data
+```{r}
+art = read.csv("final_sothebys.csv", header=TRUE, na.strings=c("", NA))
+#Save as a data frame
+art_df <- as.data.frame(art)
+#Dropping features with no interest (non-informative) in the analysis
+drop <- c("X", "Unnamed..0", "provenance", "auction_house_id", "external_image_url", "literature","condition","auc_desc")
+art_df <- art_df[, !(names(art_df) %in% drop)]
+```
+```{r}
+df1 <- art_df %>% drop_na(hammer_price_bp_usd) 
+df2 <- df1 %>%
+  filter(abs(df1$hammer_price_bp_usd - 
+               median(df1$hammer_price_bp_usd)) <=3*sd(df1$hammer_price_bp_usd)) 
+#df1 <- filter(df1,!df1$loation %in% c("DOHA","HONG KONG"))
+```
+## Auction Information
+
+```{r }
+```
+
+## Do Certain Lot Attributes Result in Higher Price?
+### What are the top words in lot title that are related to higher price? 
+(word cloud)
+### Looking at Untitle, what price ranges are they in? Is it correlated?
+```{r}
+library(vcd)
+vcd::mosaic(hammer_price_bp_usd_range~is_untitled, direction = c("v", "h"),df1,
+       gp = gpar(fill = c("lightyellow", "lightpink")),
+                 labeling = labeling_border(rot_labels = c(0, 0)))
+```
+### Are they mostly contemprary? 
+(divergent bar chart)
+### Does the era of the lot affect its price?
+```{r}
+df3 <- df2 %>%
+  filter(df2$birth_year>1800)
+ggplot(df3, aes(birth_year+30,hammer_price_bp_usd))  + 
+  geom_smooth(method='lm',formula=y~x)+
+  geom_point(alpha = .1)  + 
+  theme_grey(10)+scale_y_log10()+  geom_density_2d(bins = 5)
+```
+## Do Certain Extrernal Factors Result in Higher Price?
+### Is there an impact from the financial crisis?
+```{r}
+
+```
+###Does the Order Matter?
+```{r}
+
+
+ggplot(df2, aes(percent_in_auction,hammer_price_bp_usd))  + 
+  geom_smooth(method='lm',formula=y~x)+
+  geom_point(alpha = .1)  + 
+  theme_grey(10)+scale_y_log10()+
+  facet_wrap(~location)
+```
+
+### How Accurate are the Estimates?
