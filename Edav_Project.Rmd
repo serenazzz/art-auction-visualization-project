@@ -6,7 +6,10 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE,
+                      warning = FALSE,
+                      message = FALSE, 
+                      cache = TRUE)
 library(tidyverse)
 library(lattice)
 library(DAAG)
@@ -104,7 +107,7 @@ Looking at the output above, we can conclude that the overall state of the datas
 One important observation we will need to be careful about during further analysis is a relatively significant amount of missing values under hammer_price_bp feature. We have explored qualitative reasons behind the missing values in that category with the provider of the data. After careful observation, we found out that the missing values are actually driven by two locations that migt have less strict regulations around data governance (Doha and Hong Kong). This observation is outlined in the graph below.   
 
 
-```{r fig.width=4}
+```{r}
 #install.packages("viridis")
 library(viridis)
 art_location <- art_df %>% gather(attribute, value, -location) %>% mutate(missing = ifelse(is.na(value), "yes", "no"))
@@ -130,7 +133,7 @@ percent_missing
 
 This leads to a logical question. Are there any other variables that could explain the missing data? Therefore, we also looked at simular graphs while grouping by year and month.
 
-```{r fig.height = 3}
+```{r fig.height = 10}
 #install.packages("viridis")
 #library(viridis)
 art_year <- art_df %>% gather(attribute, value, -auc_year) %>% mutate(missing = ifelse(is.na(value), "yes", "no"))
