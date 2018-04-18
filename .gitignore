@@ -1,2 +1,4 @@
 *.csv
 .ipynb_checkpoints/
+Edav_Project_cache/
+Edav_Project_files/
