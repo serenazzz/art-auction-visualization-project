@@ -8,7 +8,7 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE,
                       warning = FALSE,
-                      message = FALSE,
+                      message = FALSE, 
                       cache = TRUE)
 library(tidyverse)
 library(lattice)
@@ -19,107 +19,58 @@ library(ggplot2)
 library(gridExtra)
 library(grid)
 ```
-# Introduction
+# Introduction 
 
-### Study Topic & Questions of Interest
+~**NEEDS INPUT**~
+Explain why you chose this topic, and the questions you are interested in studying.
 
-For our project we chose to perform an exploratory analysis and visualization on a dataset containing the historical auction prices of thousands of pieces of art. We chose this topic for a variety of reasons---whether you come from the arts and humanities, or economics and finance, art is an interesting and complex field. With new data starting to become available, for the first time we have the ability to analyze and better understand this historically opaque industry. It is a potential treasure trove for data scientists.
-
-For hundreds of years fine art has been valued by cultures throughout the world for its aesthetic and beauty, but fine art as an asset class also appeals to many people today as an attractive alternative investment that is largely non-correlated to the traditional stock market. The fine art asset class is estimated to have a global market value of over $60 billion in annual turnover and has historically outperformed the S&P 500 in terms of compound annual growth (specifically, 15-year CAGR). Geographically, the art market has for decades been dominated by the United States, United Kingdom and China with the greatest concentration of art sales in the entire world occurring right here in New York City.
-
-Each of our team members has a diverse background. In addition to experience as data scientists, a few of us have a background in economics and have worked for financial services companies. A few of us have also worked in the art industry for galleries or collectors. This topic was a cross-section of our experiences and interests that allowed us to explore timely questions about the prices and dynamics of the fine art market.
-
-From a high level, the questions that intrigued us most were related to knowing more about the auction prices (called hammer price) for pieces of art in terms of different artists, location and time periods. We initially developed a large list of potential questions, and narrowed these down based on viability in terms of the data we had available as well as the scope and time constraints for the project. Some of the specific questions we decided to look at are: 
-
-### Team Members & Contributions
+## Team Members's Contribution
 
 
 
-# Data Description
+# Data Description 
 
-### Overview
+## Overview 
 
-This dataset was provided by Arthena (https://arthena.com/). It was sourced from Sotheby’s historical auction data via the scraping of public web pages.  The raw dataset includes 22711 rows of data. Each row represents an individual lot from an auction (a lot could be an individual painting, a sculpture, or sometimes even a collection of works).  The raw dataset includes 25 columns of data.  Each column represents a feature related to either that specific lot, the artist of the lot, or the auction where the lot was sold.  Column definitions are listed below by category (Lot, Auction or Artist). For our analysis we also derive new columns from the original raw dataset. The derived column definitions are also listed below. Including these columns we ended with a total of 36 columns of data.  The detailed logic and thought process is described more in the 'Data Quality Analysis' section.
+This dataset was provided by Arthena (https://arthena.com/). It was sourced from Sotheby’s historical auction data via the scraping of public web pages.  The raw dataset includes 22711 rows of data. Each row represents an individual lot from an auction (a lot could be an individual painting, a sculpture, or sometimes even a collection of works).  The raw dataset includes 25 columns of data.  Each column represents a feature related to either that specific lot, the artist of the lot, or the auction where the lot was sold.  Column definitions are listed below by category (Lot, Auction or Artist). For our analysis we also derive new columns from the original raw dataset. The details logic and thought process is described more in detail in the 'Data Quality Analysis'.
 
-```{r}
-art = read.csv("final_sothebys.csv", header=TRUE, na.strings=c("", NA))
-#Save as a data frame
-art_df <- as.data.frame(art)
+## Column Definitions: 
 
-#Dropping features with no interest (non-informative) in the analysis
-drop <- c("X", "Unnamed..0", "provenance", "auction_house_id", "external_image_url", "literature")
-art_df <- art_df[, !(names(art_df) %in% drop)]
+**Lot**
+lot_id: a unique id for each lot
+lot_title: the title of the lot. A lot can consist of multiple works (2-3 pieces of art in it). For our purposes we assume that 1 piece is 1 lot
+estimate_low: need to follow up if this is a starting price? 
+estimate_high: estimated high price by the auction house
+hammer_price_bp: how much the lot was sold for at auction, plus buyers premium (a % fee).
+currency: currency denomination for the price estimates and hammer price (USD, EUR, GBP, HKD) 
+nth_in_auction: order that the lot was presented in at auction 
+lot_number: number assigned to a lot for the given auction, different than nth_in_auction  
+condition: description of the condition of the lot (messy text field - not used)
+provenance: description of who owned the lot previously (messy text field - not used)
+literature:  different publications that the lot was mentioned in (messy text field - not used)
+external_image_url: link to the image (not used)
 
-#Descriptive statistics
-dim(art_df)
-typeof(art_df)
-str(art_df)
-#summary(art_df)
-#head(art_df, n=5)
-#tail(art_df, n=5)
-```
+**Auction** 
+auction_house_id: unique id for each auction house (for this dataset, all 1 = Sotheby’s)
+auction_id: unique id for each auction
+auc_title: title of the auction
+number_of_lots: total number of lots in the auction
+location: location where the auction was held
+start_date: start date of the auction
+end_date: end date of the auction (same as start date for this dataset)
+auc_desc: description of the auction (messy text field - not used)
+sale_id: unique auction sale id assigned by Sotheby’s
 
-### Column Definitions:
+**Artist**
+name: name of the artist
+birth_year: artist’s approximate birth year  (messy text field - not used)
+death_year: artist’s approximate death year  (messy text field - not used)
 
-```{r}
-# Note that "provenance", "auction_house_id", "external_image_url", "literature" were dropped
-names(art_df)
 
-# where is end_date?
-```
 
-**Lot**  
-lot_id: a unique id for each lot.  
-lot_title: the title of the lot. A lot can sometimes consist of multiple pieces of art. We assume that 1 piece is 1 lot since that is most common.  
-estimate_low: the low-end auction price estimate for a lot, given by Sothebys.  
-estimate_high: the high-end auction price estimate for a lot, given by Sothebys.  
-hammer_price_bp: how much the lot was sold for at auction, plus buyers premium (a percentage fee taken by Sothebys and paid by the buyer).  
-currency: currency denomination for the price estimates and hammer price (limited to USD, EUR, GBP, HKD).  
-nth_in_auction: the order that the lot was presented in at auction.  
-lot_number: a number assigned to a lot for the given auction, different than nth_in_auction.  
-condition: description of the condition of the lot (messy text field - not used for our analysis).  
-provenance: description of who owned the lot previously (messy text field - not used for our analysis).  
-literature:  different publications that the lot was mentioned in (messy text field - not used for our analysis).  
-external_image_url: link to the image (not used for our analysis).
-
-**Auction**  
-auction_house_id: unique id for each auction house (for this dataset, all 1 since we are only using Sothebys data).  
-auction_id: unique id for each auction.  
-auc_title: title of the auction.  
-number_of_lots: total number of lots in the auction.  
-location: location where the auction was held.  
-start_date: start date of the auction.  
-end_date: end date of the auction (same as start date for this dataset).  
-auc_desc: description of the auction (messy text field - not used for our analysis).  
-sale_id: unique auction sale id assigned by Sothebys.  
-
-**Artist**  
-artist_id: unique id for each artist.  
-name: name of the artist.  
-birth_year: artist’s approximate birth year  (messy text field - not used for our analysis).  
-death_year: artist’s approximate death year  (messy text field - not used for our analysis).  
-
-**Derived**  
-estimate_avg: the average between estimate_low and estimate_high.  
-is_untitled: an indicator variable whether the name of the lot is "untitled" (in some language).  
-auc_year: the year of the auction (YYYY format).  
-auc_month: the month of the auction (as integers 1-12).  
-auc_season: the season of the auction (as integers 1-4).  
-auc_date: the date of the auction.  
-auc_order: the order in the auction by quantiles (as integers 1-10).  
-percent_in_auction: the percentage through an auction that a lot was shown (nth_in_auction divided by number_of_lots).  
-hammer_price_bp_usd: hammer_price_bp converted to usd.  
-estimate_high_usd: estimate_high converted to usd.  
-estimate_low_usd: estimate_low converted to usd.  
-estimate_avg_usd: estimate_avg converted to usd.  
-
-```{r}
-# data types
-sapply(art_df, class)
-```
 # Data Quality Analysis
 
-### Preprocessing
+## Preprocessing
 
 In this part of the project, we will be exploring the quality of the data provided for the auction data. Before analyzing the overall quality, a simple preprocessing has been conducted in Python that included the following steps:
 
@@ -131,10 +82,19 @@ In this part of the project, we will be exploring the quality of the data provid
 6. Converted all currency to USD to be able to compare pieces sold across different locations. We matched the exchange rate at the time of the sell to properly convert all transactions.
 
 A complete logic with code can be found here: **INSERT LINK HERE**
-
+ 
 ## Data Quality Exploration
+ 
+```{r}
+art = read.csv("final_sothebys.csv", header=TRUE, na.strings=c("", NA))
+#Save as a data frame
+art_df <- as.data.frame(art)
+#Dropping features with no interest (non-informative) in the analysis
+drop <- c("X", "Unnamed..0", "provenance", "auction_house_id", "external_image_url", "literature")
+art_df <- art_df[, !(names(art_df) %in% drop)]
+```
 
-Let us start by looking at all the missing values and if there are any general patterns. Since we are dealing with a large amount of rows, we will reduce repeated patters to one row using the visna function.
+Let us start by looking at all the missing values and if there are any general patterns. Since we are dealing with a large amount of rows, we will reduce repeated patters to one row using the visna function. 
 
 ```{r fig.height=3.5}
 #install.packages("extracat")
@@ -144,7 +104,7 @@ visna(art_df, sort= "b")
 
 Looking at the output above, we can conclude that the overall state of the dataset is relatively good. The second most common pattern has no missing values while the two most "problematic" features appear to be death_year and birth_year.
 
-One important observation we will need to be careful about during further analysis is a relatively significant amount of missing values under hammer_price_bp feature. We have explored qualitative reasons behind the missing values in that category with the provider of the data. After careful observation, we found out that the missing values are actually driven by two locations that migt have less strict regulations around data governance (Doha and Hong Kong). This observation is outlined in the graph below.
+One important observation we will need to be careful about during further analysis is a relatively significant amount of missing values under hammer_price_bp feature. We have explored qualitative reasons behind the missing values in that category with the provider of the data. After careful observation, we found out that the missing values are actually driven by two locations that migt have less strict regulations around data governance (Doha and Hong Kong). This observation is outlined in the graph below.   
 
 
 ```{r}
@@ -152,15 +112,15 @@ One important observation we will need to be careful about during further analys
 library(viridis)
 art_location <- art_df %>% gather(attribute, value, -location) %>% mutate(missing = ifelse(is.na(value), "yes", "no"))
 ggplot(art_location, aes(x = location, y = attribute, fill = missing)) +
-  geom_tile(color = "white") +
+  geom_tile(color = "white") + 
   ggtitle("Missing Values by Location") +
   xlab("Location") + ylab("Feature Name") +
   scale_fill_viridis(discrete=TRUE) +
   theme_bw()
 ```
-This map allows us to see that some features' missing values like hammer_price_bp, condition, and auc_desc are actually only missing in certain location (typically in pairs of two). Therefore, we can speculate that this data is MAR (missing at random) depending on a location feature.
+This map allows us to see that some features' missing values like hammer_price_bp, condition, and auc_desc are actually only missing in certain location (typically in pairs of two). Therefore, we can speculate that this data is MAR (missing at random) depending on a location feature. 
 
-Indeed, when looking at the table below, the overall percentage of missing values across difeerent locations varies quite significantly. Hong Kong is the top location with most missing values (8% of total).
+Indeed, when looking at the table below, the overall percentage of missing values across difeerent locations varies quite significantly. Hong Kong is the top location with most missing values (8% of total). 
 
 ```{r}
 art_location <- art_df %>% gather(attribute, value, -location)
@@ -178,15 +138,15 @@ This leads to a logical question. Are there any other variables that could expla
 #library(viridis)
 art_year <- art_df %>% gather(attribute, value, -auc_year) %>% mutate(missing = ifelse(is.na(value), "yes", "no"))
 year <- ggplot(art_year, aes(x = factor(auc_year), y = attribute, fill = missing)) +
-  geom_tile(color = "white") +
+  geom_tile(color = "white") + 
   ggtitle("Missing Values by Year") +
   xlab("year") + ylab("Feature Name") +
   scale_fill_viridis(discrete=TRUE) +
   theme_bw()
 art_month <- art_df %>% gather(attribute, value, -auc_month) %>% mutate(missing = ifelse(is.na(value), "yes", "no"))
-month <-ggplot(art_month, aes(x = factor(auc_month), y = attribute, fill =
+month <-ggplot(art_month, aes(x = factor(auc_month), y = attribute, fill =       
                                 missing)) +
-  geom_tile(color = "white") +
+  geom_tile(color = "white") + 
   ggtitle("Missing Values by Month") +
   xlab("Month") + ylab("Feature Name") +
   scale_fill_viridis(discrete=TRUE) +
@@ -194,7 +154,7 @@ month <-ggplot(art_month, aes(x = factor(auc_month), y = attribute, fill =
 grid.arrange(year, month)
 ```
 
-While month looks more or less equally distributed, there is an interesting pattern forming in the year view. It comes as no surprise that older years (2006-2009) would carry all of the missing values for features around description and condition. There also looks to be certain years (more like 3 year periods) with perfectly clean data: 2010-2012 and 2015-2017.
+While month looks more or less equally distributed, there is an interesting pattern forming in the year view. It comes as no surprise that older years (2006-2009) would carry all of the missing values for features around description and condition. There also looks to be certain years (more like 3 year periods) with perfectly clean data: 2010-2012 and 2015-2017. 
 
 Next, let us look at the exact percentages and values for the overall missing data.
 
@@ -207,7 +167,7 @@ skimr::skim(art_df) %>% filter(stat =="missing") %>% arrange(desc(value)) %>% se
 Looking at the table, it actually appears that the estimates (along with its corresponding values generated during pre-processing) are only missing a very small amount of data (less than 1%). Therefore, such a small error can be easily filtered out in future analysis. 
 
 
-Nonetheless, hammer_price is missing nearly 20%. Besides what we saw when looking by location, our guess is that some auction ids are missing the hammer_price_bp in its entirety and hence the difference. It can be easily checked by looking at the aggregate table.
+Nonetheless, hammer_price is missing nearly 20%. Besides what we saw when looking by location, our guess is that some auction ids are missing the hammer_price_bp in its entirety and hence the difference. It can be easily checked by looking at the aggregate table. 
 
 ```{r}
 art_price <- art_df[, c("auction_id", "hammer_price_bp")]
@@ -218,7 +178,7 @@ percent_missing <- art_price %>% group_by(auction_id) %>%
 percent_missing %>% filter(percent_na>=0.4)
 ```
 
-Looking at the data table, there is a significant number of auctions that are missing more than 10% of the price data (sometimes even 100%). Therefore, it must be that not only the locations but also the auction itself is a determining factor in missing hammer price value.
+Looking at the data table, there is a significant number of auctions that are missing more than 10% of the price data (sometimes even 100%). Therefore, it must be that not only the locations but also the auction itself is a determining factor in missing hammer price value. 
 
 Lastly, we would like to check for correlation between average hammer_price_bp and percentage of missing values (since it is the one feature that matters the most in our analysis and is most prime to such correlations). Could it be that very high/low lots are simply not reported and, therefore, are missing more?
 
@@ -235,12 +195,12 @@ percent <- percent_missing[4]
 average <- art_average[2]
 auction_id <- percent_missing[1]
 corr <- data.frame(auction_id=auction_id, percent=percent, average = average)
-ggplot(corr, aes(average, percent)) + geom_point(col="blue") +ggtitle("Auction Average Hammer Price vs Percentage of Missing Values")
+ggplot(corr, aes(average, percent)) + geom_point(col="blue") +ggtitle("Auction Average Hammer Price vs Percentage of Missing Values") 
 ```
 
-There does not seem to be very strong correlation between the two variables.Just a subtle suggestion that auctions with smaller average price tend to have more NAs. Therefore, we will only consider location as the main determinant for missing values around hammer_price_bp.
+There does not seem to be very strong correlation between the two variables.Just a subtle suggestion that auctions with smaller average price tend to have more NAs. Therefore, we will only consider location as the main determinant for missing values around hammer_price_bp. 
 
-Before we move on, let us quickly follow up on the action items from the data quality analysis.
+Before we move on, let us quickly follow up on the action items from the data quality analysis. 
 
 1. filter out NAs for price estimates
 2. take a note to exclude Doha and Hong Kong fro hammer_price_bp analysis
@@ -250,6 +210,34 @@ art_final <- art_df %>% filter(!is.na(estimate_low))
 ```
 
 # Main Analysis (Exploratory Data Analysis)
+
+## Financial Crisis and Auction Revenue
+
+Let's start by looking at the total revenue of Sothebeys on a yearly scale. Our guess is that we are supposed to see a significant drop around the time of the financial crisis. 
+
+```{r}
+art_finance <- art_final[c("auc_year", "auc_month", "location","hammer_price_bp_usd")] %>% filter(!is.na(hammer_price_bp_usd))
+art_yearfin <- art_finance %>% group_by(auc_year) %>% summarise(revenue = sum(hammer_price_bp_usd))
+ggplot(art_yearfin, aes(x=auc_year, y=as.numeric(revenue/1000000))) +geom_line(col="blue")+ggtitle("Financial Crisis' Effect on Auction Revenue ($M)")+ylab("Revenue")+xlab("Year")
+```
+
+Indeed, we are seeing a big deep around late 2010. It is surprising to see that it took some time for the effect to reach the auction houses. Perhaps it is certain locations that are skewing some of the data. Let us try to facet the data by location and see if that could present us with a better outlook.
+
+
+```{r}
+art_locfin <- art_finance %>% group_by(auc_year, location) %>% summarise(revenue = sum(hammer_price_bp_usd))
+ggplot(art_locfin, aes(x=auc_year, y=as.numeric(revenue/1000000))) +geom_line(col="blue")+ggtitle("Financial Crisis' Effect on Auction Revenue ($M)")+ylab("Revenue")+xlab("Year") + facet_wrap(~location, scales ="free_y")
+```
+
+It looks like, indeed, some locations do not have consistent data and might be throwing the calculation off (Dubai, Doha, and Amsterdam). Let us tke a look at the same chart without those locations. 
+
+```{r}
+art_locfin <- art_finance %>% group_by(auc_year, location) %>% summarise(revenue = sum(hammer_price_bp_usd)) %>% filter(location %in%  c("HONG KONG", "NEW YORK", "LONDON", "PARIS", "MILAN"))
+ggplot(art_locfin, aes(x=auc_year, y=as.numeric(revenue/1000000))) +geom_line(col="blue")+ggtitle("Financial Crisis' Effect on Auction Revenue ($M)")+ylab("Revenue")+xlab("Year") + facet_wrap(~location, scales ="free_y")
+```
+
+We notice a consistent drop in revenue across all locations above starting 2010. Therefore, our hypothesys must be correct: the financial crisis did have an effect on the auction revenue across the world (specifically significant drops are observed in New York and Hong Kong). 
+
 
 # Executive Summary
 
