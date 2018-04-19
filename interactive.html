@@ -40,7 +40,7 @@
 
   <script>
 
-  // Create svg and initial bars
+  // Create svg and initial circles
   var w = 1200;
   var h = 800;
   var margin = {top: 25, right: 175, bottom: 250, left: 100};
@@ -56,32 +56,27 @@
     .attr("height", h);
 
   svg.append("rect")
-    .attr("x", margin.left)
-    .attr("y", margin.top)
-    .attr("width", innerWidth)
-    .attr("height", innerHeight)
+    .attr("x", margin.left - 25)
+    .attr("y", margin.top - 25)
+    .attr("width", innerWidth + 50)
+    .attr("height", innerHeight + 50)
     .attr("fill", "gray")
     .attr("fill-opacity", .05);
 
   d3.json("interactive.json", function(error, data) {
 
-    console.log(data);
-
-    // sort by oldest to newest
-    data.sort(function(a, b) {
-      return a.timeline_days - b.timeline_days;
-    });
-
-    var init = data.filter(function(lot) {
+    // filter initial data based on year
+    var displayData = data.filter(function(lot) {
       return lot.auc_year == currentYear;
     });
 
+    // set axes scales
     var xScale = d3.scaleLinear()
       .domain([0,365])
       .range([0, innerWidth])
 
     var yScale = d3.scaleLinear()
-      .domain([0, d3.max(init, d => Math.log10(d.hammer_price_bp_usd + 1))])
+      .domain([0, d3.max(displayData, d => Math.log10(d.hammer_price_bp_usd + 1))])
       .range([innerHeight, 0]);
 
     var xAxis = d3.axisBottom()
@@ -91,8 +86,6 @@
       .scale(yScale);
 
     // Add initial circles
-    var circles = svg.selectAll("circles").data(init);
-
     var colorMap = {"NEW YORK": "blue",
                     "LONDON": "red",
                     "PARIS": "yellow",
@@ -102,28 +95,17 @@
                     "DOHA": "aqua",
                     "DUBAI": "orange" }
 
+    var circles = svg.selectAll("circles").data(displayData);
+
     circles.enter().append("circle")
-      .attr("cx", d => xScale(d.timeline_days % 366) + Math.random(-1,1)*50)
+      .attr("cx", d => xScale(d.timeline_days % 366))// + Math.random(-1,1)*50
       .attr("transform", `translate (${margin.left}, ${margin.top})`)
       .attr("cy", d => yScale(Math.log10(d.hammer_price_bp_usd + 1)))
       // .attr("transform", `translate (${margin.left}, ${h - margin.bottom})`)
       .attr("r", 3)
       .attr("fill", d => colorMap[d.location] || "black");
 
-
-    // var bars = svg.append("g")
-    //     .attr("id", "plot")
-    //     .attr("transform", `translate (${margin.left}, ${margin.top})`)
-    //   .selectAll("rect")
-    //     .data(bardata, d => d.key);                   // CHANGE
-  // bars.enter().append("rect")
-  //     .attr("class", "bar")
-  //     .attr("x", (d, i) => xScale(i))
-  //     .attr("y", d => yScale(d.value))              // CHANGE
-  //     .attr("width", xScale.bandwidth())
-  //     .attr("height", d => innerHeight - yScale(d.value)) // CHANGE
-  //     .attr("fill","blue");
-
+    // append axes
     svg.append("g")
       .attr("class", "xAxis")
       .attr("transform", `translate (${margin.left}, ${h - margin.bottom})`)
@@ -132,6 +114,80 @@
       .attr("class", "yAxis")
       .attr("transform", `translate (${margin.left}, ${margin.top})`)
       .call(yAxis);
+
+    // General Update Pattern
+    function updateDataTo(year, enterPos, exitPos) {
+
+      delay = 500
+
+      document.getElementById("current-year").innerHTML = year;
+
+      var newData = data.filter(function(lot) {
+        return lot.auc_year == currentYear;
+      });
+
+      // update y axis scale
+      var yScale = d3.scaleLinear()
+        .domain([0, d3.max(newData, d => Math.log10(d.hammer_price_bp_usd + 1))])
+        .range([innerHeight, 0]);
+
+      var yAxis = d3.axisLeft()
+        .scale(yScale);
+
+      // first remove old data
+      var circles = svg.selectAll("circle").data([]);
+
+      console.log("exit:" + exitPos);
+
+      circles.exit()
+        .transition()
+        .duration(delay)
+        .attr("cx", exitPos)
+        .remove();
+
+      // then update new data
+      circles = svg.selectAll("circles").data(newData);
+
+      console.log(circles.enter())
+
+      circles.enter().append("circle")
+        .attr("cx", enterPos)
+        .attr("transform", `translate (${margin.left}, ${margin.top})`)
+        .attr("cy", d => yScale(Math.log10(d.hammer_price_bp_usd + 1)))
+        // .attr("transform", `translate (${margin.left}, ${h - margin.bottom})`)
+        .attr("r", 3)
+        .attr("fill", d => colorMap[d.location] || "black")
+        .merge(circles)
+        .transition()
+        .duration(delay)
+        .ease(d3.easeLinear)
+        .attr("cx", d => xScale(d.timeline_days % 366))// + Math.random(-1,1)*50
+        .attr("transform", `translate (${margin.left}, ${margin.top})`)
+        .attr("cy", d => yScale(Math.log10(d.hammer_price_bp_usd + 1)))
+
+      svg.select(".yAxis")
+        .transition()
+          .duration(delay)
+          .ease(d3.easeLinear)
+          .call(yAxis);
+    }
+
+    // check which arrow was clicked and update accordingly
+    d3.selectAll("h1").on("click", function () {
+      var arrow = d3.select(this).attr("id");
+      var l_side = 0;
+      var r_side = innerWidth + 50;
+
+      if (arrow == "scroll_right") {
+        currentYear += 1
+        var enterpos = w;
+        var exitpos = w;
+        updateDataTo(currentYear, r_side, l_side)
+      } else if (arrow == "scroll_left") {
+        currentYear -= 1
+        updateDataTo(currentYear, l_side, r_side)
+      }
+    });
 
     // show lot image on mouse over, remove on mouse out
     d3.selectAll("circle").on("mouseover", function(d, i) {
@@ -147,7 +203,6 @@
     }).on("mouseout", function(d, i) {
       d3.select(".lot-image").remove()
     });
-
 
   });
 
@@ -184,65 +239,7 @@
   //     .attr("fill","blue");
 
 
-// General Update Pattern
-  function update(data, exitpos) {
-    xScale.domain(d3.range(data.length));
 
-    yScale.domain([0, d3.max(data, d => d.value)]);
-
-    var bars = svg.select("#plot")
-         .selectAll("rect")
-        .data(data, d => d.key);                           // CHANGE
-
-    bars.enter().append("rect")
-        .attr("x", w)
-        .attr("y", d => yScale(d.value))                   // CHANGE
-        .attr("width", xScale.bandwidth())
-        .attr("height", d => innerHeight - yScale(d.value))
-        .attr("fill", "blue")
-      .merge(bars)
-        .transition()
-        .duration(dur)
-        .ease(d3.easeLinear)
-        .attr("x", (d, i) => xScale(i))
-        .attr("y", d => yScale(d.value))                   // CHANGE
-        .attr("width", xScale.bandwidth())
-        .attr("height", d => innerHeight - yScale(d.value)) // CHANGE
-
-    bars.exit()
-      .transition()                                        // NEW
-        .duration(dur)
-        .attr("x", exitpos)
-        .remove();
-
-    svg.select(".xAxis")
-      .transition()
-        .duration(dur)
-        .ease(d3.easeLinear)
-        .call(xAxis);
-    svg.select(".yAxis")
-      .transition()
-        .duration(dur)
-        .ease(d3.easeLinear)
-        .call(yAxis);
-  }
-
-  d3.selectAll("p")
-        .on("click", function () {
-      var arrow = d3.select(this).attr("id");
-      if (paraID == "add") {
-          var newvalue = Math.floor(Math.random()*400);
-          var newkey = bardata[bardata.length-1].key + 1;
-          bardata.push({key: newkey, value: newvalue } );       // NEW
-      } else if (paraID == "remove_left") {
-          bardata.shift();
-          var exitpos = -xScale.bandwidth();
-      } else {
-          bardata.pop();
-          var exitpos = w;
-      };
-      update(bardata, exitpos);
-    });
   </script>
 
   </body>
