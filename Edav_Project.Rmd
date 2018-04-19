@@ -211,6 +211,34 @@ art_final <- art_df %>% filter(!is.na(estimate_low))
 
 # Main Analysis (Exploratory Data Analysis)
 
+## Financial Crisis and Auction Revenue
+
+Let's start by looking at the total revenue of Sothebeys on a yearly scale. Our guess is that we are supposed to see a significant drop around the time of the financial crisis. 
+
+```{r}
+art_finance <- art_final[c("auc_year", "auc_month", "location","hammer_price_bp_usd")] %>% filter(!is.na(hammer_price_bp_usd))
+art_yearfin <- art_finance %>% group_by(auc_year) %>% summarise(revenue = sum(hammer_price_bp_usd))
+ggplot(art_yearfin, aes(x=auc_year, y=as.numeric(revenue/1000000))) +geom_line(col="blue")+ggtitle("Financial Crisis' Effect on Auction Revenue ($M)")+ylab("Revenue")+xlab("Year")
+```
+
+Indeed, we are seeing a big deep around late 2010. It is surprising to see that it took some time for the effect to reach the auction houses. Perhaps it is certain locations that are skewing some of the data. Let us try to facet the data by location and see if that could present us with a better outlook.
+
+
+```{r}
+art_locfin <- art_finance %>% group_by(auc_year, location) %>% summarise(revenue = sum(hammer_price_bp_usd))
+ggplot(art_locfin, aes(x=auc_year, y=as.numeric(revenue/1000000))) +geom_line(col="blue")+ggtitle("Financial Crisis' Effect on Auction Revenue ($M)")+ylab("Revenue")+xlab("Year") + facet_wrap(~location, scales ="free_y")
+```
+
+It looks like, indeed, some locations do not have consistent data and might be throwing the calculation off (Dubai, Doha, and Amsterdam). Let us tke a look at the same chart without those locations. 
+
+```{r}
+art_locfin <- art_finance %>% group_by(auc_year, location) %>% summarise(revenue = sum(hammer_price_bp_usd)) %>% filter(location %in%  c("HONG KONG", "NEW YORK", "LONDON", "PARIS", "MILAN"))
+ggplot(art_locfin, aes(x=auc_year, y=as.numeric(revenue/1000000))) +geom_line(col="blue")+ggtitle("Financial Crisis' Effect on Auction Revenue ($M)")+ylab("Revenue")+xlab("Year") + facet_wrap(~location, scales ="free_y")
+```
+
+We notice a consistent drop in revenue across all locations above starting 2010. Therefore, our hypothesys must be correct: the financial crisis did have an effect on the auction revenue across the world (specifically significant drops are observed in New York and Hong Kong). 
+
+
 # Executive Summary
 
 # Interactive Componenet
