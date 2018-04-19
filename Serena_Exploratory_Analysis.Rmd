@@ -38,6 +38,7 @@ df2 <- df1 %>%
 ## Auction Information
 
 ```{r }
+ggplot(df2,aes(x=hammer_price_bp_usd))+geom_histogram(aes(y=..density..))+geom_density()
 ```
 
 ## Do Certain Lot Attributes Result in Higher Price?
@@ -56,8 +57,8 @@ vcd::mosaic(hammer_price_bp_usd_range~is_untitled, direction = c("v", "h"),df1,
 ```{r}
 df3 <- df2 %>%
   filter(df2$birth_year>1800)
-ggplot(df3, aes(birth_year+30,hammer_price_bp_usd))  + 
-  geom_smooth(method='lm',formula=y~x)+
+ggplot(df3, aes(birth_year,hammer_price_bp_usd))  + 
+  geom_smooth(method='lm',formula=y ~ poly(x, 2))+
   geom_point(alpha = .1)  + 
   theme_grey(10)+scale_y_log10()+  geom_density_2d(bins = 5)
 ```
@@ -68,13 +69,13 @@ ggplot(df3, aes(birth_year+30,hammer_price_bp_usd))  +
 ```
 ###Does the Order Matter?
 ```{r}
-
-
 ggplot(df2, aes(percent_in_auction,hammer_price_bp_usd))  + 
-  geom_smooth(method='lm',formula=y~x)+
-  geom_point(alpha = .1)  + 
+  geom_smooth(method='lm',formula=y~x,color="red")+
+  geom_point(alpha = .05)  + 
   theme_grey(10)+scale_y_log10()+
   facet_wrap(~location)
+```
+```{r}
 ```
 
 ### How Accurate are the Estimates?

@@ -1,2 +1,5 @@
 *.csv
 .ipynb_checkpoints/
+.DS_Store
+Serena_Exploratory_Analysis_cache/
+Serena_Exploratory_Analysis_files/
