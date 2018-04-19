@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Art Auction Visualization</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+  </head>
+  <style>
+    .left {
+      float: left;
+    }
+    .margin {
+      margin-right: 250px;
+      margin-left: 100px;
+    }
+
+    .padding {
+      padding: 0 10px;
+    }
+  </style>
+  <body>
+
+  <div class="container">
+    <div class="row">
+      <div class="col-xs-12">
+        <h1 class="left margin">Art Auction Visualization</h1>
+
+        <h1 id="scroll_left" class="glyphicon glyphicon-chevron-left left padding"></h1>
+        <h1 class="left" id="current-year"></h1>
+        <h1 id="scroll_right" class="glyphicon glyphicon-chevron-right left padding"></h1>
+        <div id="timeline"></div>
+
+        <p id="add">Add an element</p>
+        <p id="remove_left">Remove bar (left)</p>
+        <p id="remove_right">Remove bar (right)</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+
+  // Create svg and initial bars
+  var w = 1200;
+  var h = 800;
+  var margin = {top: 25, right: 175, bottom: 250, left: 100};
+  var innerWidth = w - margin.left - margin.right;
+  var innerHeight = h - margin.top - margin.bottom;
+
+  var currentYear = 2017
+  document.getElementById("current-year").innerHTML = currentYear;
+
+  var svg = d3.select("#timeline")
+    .append("svg")
+    .attr("width", w)
+    .attr("height", h);
+
+  svg.append("rect")
+    .attr("x", margin.left)
+    .attr("y", margin.top)
+    .attr("width", innerWidth)
+    .attr("height", innerHeight)
+    .attr("fill", "gray")
+    .attr("fill-opacity", .05);
+
+  d3.json("interactive.json", function(error, data) {
+
+    console.log(data);
+
+    // sort by oldest to newest
+    data.sort(function(a, b) {
+      return a.timeline_days - b.timeline_days;
+    });
+
+    var init = data.filter(function(lot) {
+      return lot.auc_year == currentYear;
+    });
+
+    var xScale = d3.scaleLinear()
+      .domain([0,365])
+      .range([0, innerWidth])
+
+    var yScale = d3.scaleLinear()
+      .domain([0, d3.max(init, d => Math.log10(d.hammer_price_bp_usd + 1))])
+      .range([innerHeight, 0]);
+
+    var xAxis = d3.axisBottom()
+      .scale(xScale);
+
+    var yAxis = d3.axisLeft()
+      .scale(yScale);
+
+    // Add initial circles
+    var circles = svg.selectAll("circles").data(init);
+
+    var colorMap = {"NEW YORK": "blue",
+                    "LONDON": "red",
+                    "PARIS": "yellow",
+                    "AMSTERDAM": "green",
+                    "MILAN": "maroon",
+                    "HONG KONG": "fuchsia",
+                    "DOHA": "aqua",
+                    "DUBAI": "orange" }
+
+    circles.enter().append("circle")
+      .attr("cx", d => xScale(d.timeline_days % 366) + Math.random(-1,1)*50)
+      .attr("transform", `translate (${margin.left}, ${margin.top})`)
+      .attr("cy", d => yScale(Math.log10(d.hammer_price_bp_usd + 1)))
+      // .attr("transform", `translate (${margin.left}, ${h - margin.bottom})`)
+      .attr("r", 3)
+      .attr("fill", d => colorMap[d.location] || "black");
+
+
+    // var bars = svg.append("g")
+    //     .attr("id", "plot")
+    //     .attr("transform", `translate (${margin.left}, ${margin.top})`)
+    //   .selectAll("rect")
+    //     .data(bardata, d => d.key);                   // CHANGE
+  // bars.enter().append("rect")
+  //     .attr("class", "bar")
+  //     .attr("x", (d, i) => xScale(i))
+  //     .attr("y", d => yScale(d.value))              // CHANGE
+  //     .attr("width", xScale.bandwidth())
+  //     .attr("height", d => innerHeight - yScale(d.value)) // CHANGE
+  //     .attr("fill","blue");
+
+    svg.append("g")
+      .attr("class", "xAxis")
+      .attr("transform", `translate (${margin.left}, ${h - margin.bottom})`)
+      .call(xAxis);
+    svg.append("g")
+      .attr("class", "yAxis")
+      .attr("transform", `translate (${margin.left}, ${margin.top})`)
+      .call(yAxis);
+
+    // show lot image on mouse over, remove on mouse out
+    d3.selectAll("circle").on("mouseover", function(d, i) {
+      svg.append("svg:image")
+        .attr("class", "lot-image")
+        .attr("x", xScale(d.timeline_days % 366) + 10)
+        .attr("transform", `translate (${margin.left}, ${margin.top})`)
+        .attr("y", yScale(Math.log10(d.hammer_price_bp_usd + 1)) + 10)
+        .attr("width", 200)
+        .attr("height", 200)
+        .attr("xlink:href", d.external_image_url)
+
+    }).on("mouseout", function(d, i) {
+      d3.select(".lot-image").remove()
+    });
+
+
+  });
+
+
+
+
+  // var dur = 500;
+
+  // var bardata = [300, 100, 150, 220, 70, 270]
+  //     .map((value, key) => ({key, value}));
+
+  // var xScale = d3.scaleBand()
+  //     .domain(d3.range(bardata.length))
+  //     .range([0, innerWidth])
+  //     // .paddingInner(.1);
+  // var yScale = d3.scaleLinear()
+  //     .domain([0, d3.max(bardata, d => d.value)])
+  //     .range([innerHeight, 0]);
+  // var xAxis = d3.axisBottom()
+  //     .scale(xScale);
+  // var yAxis = d3.axisLeft()
+  //     .scale(yScale);
+  // var bars = svg.append("g")
+  //     .attr("id", "plot")
+  //     .attr("transform", `translate (${margin.left}, ${margin.top})`)
+  //   .selectAll("rect")
+  //     .data(bardata, d => d.key);                   // CHANGE
+  // bars.enter().append("rect")
+  //     .attr("class", "bar")
+  //     .attr("x", (d, i) => xScale(i))
+  //     .attr("y", d => yScale(d.value))              // CHANGE
+  //     .attr("width", xScale.bandwidth())
+  //     .attr("height", d => innerHeight - yScale(d.value)) // CHANGE
+  //     .attr("fill","blue");
+
+
+// General Update Pattern
+  function update(data, exitpos) {
+    xScale.domain(d3.range(data.length));
+
+    yScale.domain([0, d3.max(data, d => d.value)]);
+
+    var bars = svg.select("#plot")
+         .selectAll("rect")
+        .data(data, d => d.key);                           // CHANGE
+
+    bars.enter().append("rect")
+        .attr("x", w)
+        .attr("y", d => yScale(d.value))                   // CHANGE
+        .attr("width", xScale.bandwidth())
+        .attr("height", d => innerHeight - yScale(d.value))
+        .attr("fill", "blue")
+      .merge(bars)
+        .transition()
+        .duration(dur)
+        .ease(d3.easeLinear)
+        .attr("x", (d, i) => xScale(i))
+        .attr("y", d => yScale(d.value))                   // CHANGE
+        .attr("width", xScale.bandwidth())
+        .attr("height", d => innerHeight - yScale(d.value)) // CHANGE
+
+    bars.exit()
+      .transition()                                        // NEW
+        .duration(dur)
+        .attr("x", exitpos)
+        .remove();
+
+    svg.select(".xAxis")
+      .transition()
+        .duration(dur)
+        .ease(d3.easeLinear)
+        .call(xAxis);
+    svg.select(".yAxis")
+      .transition()
+        .duration(dur)
+        .ease(d3.easeLinear)
+        .call(yAxis);
+  }
+
+  d3.selectAll("p")
+        .on("click", function () {
+      var arrow = d3.select(this).attr("id");
+      if (paraID == "add") {
+          var newvalue = Math.floor(Math.random()*400);
+          var newkey = bardata[bardata.length-1].key + 1;
+          bardata.push({key: newkey, value: newvalue } );       // NEW
+      } else if (paraID == "remove_left") {
+          bardata.shift();
+          var exitpos = -xScale.bandwidth();
+      } else {
+          bardata.pop();
+          var exitpos = w;
+      };
+      update(bardata, exitpos);
+    });
+  </script>
+
+  </body>
+</html>
+
+
+<!-- <!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Seconds</title>
+    <script src="https://d3js.org/d3.v4.min.js"> ></script>
+  </head>
+  <body>
+    <h3>Click here to update</h3>
+
+    <script type="text/javascript">
+
+      //Width and height
+      var w = 400;
+      var h = 400;
+
+      var margin = {top: 25, right: 25, bottom: 25, left: 25};
+      var innerHeight = h - margin.top - margin.bottom;
+      var innerWidth = w - margin.left - margin.right; 
+
+      var d = new Date();
+      var seconds = d.getSeconds();
+
+      var dataset = d3.range(seconds)
+          .map( () => ({x: Math.floor(Math.random() * innerWidth),
+                        y: Math.floor(Math.random() * innerHeight)}) );
+
+      // Create SVG element
+      var svg = d3.select("body")
+        .append("svg")
+        .attr("width", w)
+        .attr("height", h);
+
+      // Add background rectangle
+      svg.append("rect")
+        .attr("x", 0)
+        .attr("y", 0)
+        .attr("width", w)
+        .attr("height", h)
+        .attr("fill", "lightblue");
+
+      // Add initial circles
+      var circles = svg.selectAll("circles").data(dataset);
+
+      circles.enter().append("circle")
+        .attr("cy", d => d.y)
+        .attr("cx", d => d.x)
+        .attr("r", 10)
+        .attr("fill", "red")
+        .merge(circles);
+
+    // General Update Pattern (triggered on click)
+    function update(data) {
+      if (data > 0){
+        dataset = dataset.concat(d3.range(data)
+          .map( () => ({x: Math.floor(Math.random() * innerWidth),
+                        y: Math.floor(Math.random() * innerHeight)}))
+        );
+
+        circles = svg.selectAll("circle").data(dataset);
+        circles.enter().append("circle")
+          .attr("cy", d => d.y)
+          .attr("cx", d => d.x)
+          .attr("r", 10)
+          .attr("fill", "blue")
+          .merge(circles)
+      }
+      else {
+        dataset.splice(dataset.length + data, -data)
+        circles = svg.selectAll("circle").data(dataset);
+        circles.exit()
+          .transition()
+          .duration(1000)
+          .attr("cy", h)
+          .remove()
+      }
+    }
+
+    d3.select("h3").on("click", function() {
+
+      var seconds_i = new Date().getSeconds();
+      var delta = seconds_i - seconds
+
+      update(delta)
+
+      seconds = seconds_i;
+
+      svg.selectAll("circle").data(dataset)
+        .transition()
+        .duration(2000)
+        .attr("fill", "yellow")
+        .transition()
+        .duration(2000)
+        .attr("fill", "red");
+
+     });
+
+    </script>
+  </body>
+</html>
+
+ -->
+
+
+
+
+
+
+
