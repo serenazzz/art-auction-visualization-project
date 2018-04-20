@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Art Auction Visualization</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+  </head>
+  <style>
+    .left {
+      float: left;
+    }
+    .padding {
+      padding: 0 10px;
+    }
+    .color {
+      padding: 0 20px;
+    }
+    .blue {
+      color: blue;
+    }
+    .red {
+      color: red;
+    }
+    .green {
+      color: green;
+    }
+    .yellow {
+      color: yellow;
+    }
+    .orange {
+      color: orange;
+    }
+    .fuchsia {
+      color: fuchsia;
+    }
+    .aqua {
+      color: aqua;
+    }
+    .maroon {
+      color: maroon;
+    }
+    .glyphicon-stop {
+      padding-right: 2px;
+    }
+    #color-key {
+      margin-left: 100px;
+      text-align: center;
+    }
+    #title {
+      margin-right: 250px;
+      margin-left: 150px;
+    }
+    #subtext {
+      margin-left: 150px;
+    }
+  </style>
+  <body>
+
+  <div class="container">
+    <div class="row">
+      <div class="col-xs-12">
+        <h1 id="title" class="left">Art Auction Visualization</h1>
+
+        <h1 id="scroll_left" class="glyphicon glyphicon-chevron-left left padding"></h1>
+        <h1 class="left" id="current-year"></h1>
+        <h1 id="scroll_right" class="glyphicon glyphicon-chevron-right left padding"></h1>
+        <br />
+        <br />
+        <p id="subtext" class="left"><b>Hammer Prices by Year (USD, 2006-2018)</b></p>
+        <br />
+        <br />
+        <br />
+        <br />
+        <div id="color-key"></div>
+        <div id="timeline"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/4.13.0/firebase.js"></script>
+  <script>
+    // This is not related to d3, I'm just conveniently using d3 to read
+    // my json file for firebase configuration credentials
+    d3.json("config.json", function(error, data) {
+      // Initialize Firebase
+      var config = data;
+      firebase.initializeApp(config);
+    });
+  </script>
+  <script>
+
+  // Create svg and initial circles
+  var w = 1200;
+  var h = 800;
+  var margin = {top: 25, right: 175, bottom: 250, left: 100};
+  var innerWidth = w - margin.left - margin.right;
+  var innerHeight = h - margin.top - margin.bottom;
+
+  var currentYear = 2017
+  document.getElementById("current-year").innerHTML = currentYear;
+
+  var svg = d3.select("#timeline")
+    .append("svg")
+    .attr("width", w)
+    .attr("height", h);
+
+  svg.append("rect")
+    .attr("x", margin.left - 75)
+    .attr("y", margin.top - 25)
+    .attr("width", innerWidth + 150)
+    .attr("height", innerHeight + 50)
+    .attr("fill", "gray")
+    .attr("fill-opacity", .05);
+
+  d3.json("interactive.json", function(error, data) {
+
+    // filter initial data based on year
+    var displayData = data.filter(function(lot) {
+      return lot.auc_year == currentYear;
+    });
+
+    // set axes scales
+    var xScale = d3.scaleLinear()
+      .domain([new Date(currentYear, 0, 1), new Date(currentYear, 11, 31)])
+      .range([0, innerWidth])
+
+    var yScale = d3.scaleLog()
+      .domain([1, d3.max(displayData, d => d.hammer_price_bp_usd)])
+      .range([innerHeight, 0]);
+
+    var xAxis = d3.axisBottom()
+      .scale(xScale)
+      .ticks(6)
+      .tickFormat(d3.timeFormat("%B"))
+
+    var yAxis = d3.axisLeft()
+      .scale(yScale)
+      .tickFormat(function (d) {
+        return yScale.tickFormat(4, d3.format("$,d"))(d)});
+
+    // Add initial circles
+    var colorMap = [{"location": "NEW YORK", "color": "blue"},
+                    {"location": "LONDON", "color": "red"},
+                    {"location": "PARIS", "color": "green"},
+                    {"location": "AMSTERDAM", "color": "yellow"},
+                    {"location": "MILAN", "color": "orange"},
+                    {"location": "HONG KONG", "color": "fuchsia"},
+                    {"location": "DOHA", "color": "aqua"},
+                    {"location": "DUBAI", "color": "maroon"}];
+
+    var html = colorMap.map(function(src) {
+      return '<div class="left color"><span class="glyphicon glyphicon-stop ' + src.color + '"></span>' + src.location + '</div>';
+    }).join('');
+
+    document.getElementById("color-key").innerHTML = html;
+
+    var circles = svg.selectAll("circles").data(displayData);
+
+    circles.enter().append("circle")
+      .attr("cx", d => xScale(new Date(d.auc_date)))// + Math.random(-1,1)*5
+      .attr("transform", `translate (${margin.left}, ${margin.top})`)
+      .attr("cy", d => yScale(d.hammer_price_bp_usd + 1))
+      // .attr("transform", `translate (${margin.left}, ${h - margin.bottom})`)
+      .attr("r", 3)
+      .attr("fill", d => colorMap.find(function (obj) { return obj.location === d.location; }).color || "black");
+
+    // append axes
+    svg.append("g")
+      .attr("class", "xAxis")
+      .attr("transform", `translate (${margin.left}, ${h - margin.bottom})`)
+      .call(xAxis);
+    svg.append("g")
+      .attr("class", "yAxis")
+      .attr("transform", `translate (${margin.left}, ${margin.top})`)
+      .call(yAxis);
+
+    // General Update Pattern
+    function updateDataTo(year, enterPos, exitPos) {
+
+      delay = 300
+
+      document.getElementById("current-year").innerHTML = year;
+
+      var newData = data.filter(function(lot) {
+        return lot.auc_year == year;
+      });
+
+      // update y axis scale
+      var xScale = d3.scaleLinear()
+        .domain([new Date(year, 0, 1), new Date(year, 11, 31)])
+        .range([0, innerWidth])
+
+      var yScale = d3.scaleLog()
+        .domain([1, d3.max(newData, d => d.hammer_price_bp_usd + 1)])
+        .range([innerHeight, 0]);
+
+      var xAxis = d3.axisBottom()
+        .scale(xScale)
+        .ticks(6)
+        .tickFormat(d3.timeFormat("%B"))
+
+      var yAxis = d3.axisLeft()
+        .scale(yScale)
+        .tickFormat(function (d) {
+        return yScale.tickFormat(4, d3.format("$,d"))(d)});
+
+      // first remove old data
+      var circles = svg.selectAll("circle").data([]);
+
+      circles.exit()
+        .transition()
+        .duration(delay)
+        .attr("cx", exitPos)
+        .remove();
+
+      // then update new data
+      circles = svg.selectAll("circles").data(newData);
+
+      circles.enter().append("circle")
+        .attr("cx", enterPos)
+        .attr("transform", `translate (${margin.left}, ${margin.top})`)
+        .attr("cy", d => yScale(d.hammer_price_bp_usd + 1))
+        // .attr("transform", `translate (${margin.left}, ${h - margin.bottom})`)
+        .attr("r", 3)
+        .attr("fill", d => colorMap.find(function (obj) { return obj.location === d.location; }).color || "black")
+        .merge(circles)
+        .transition()
+        .duration(delay)
+        .ease(d3.easeLinear)
+        .attr("cx", d => xScale(new Date(d.auc_date)))// + Math.random(-1,1)*5
+        .attr("transform", `translate (${margin.left}, ${margin.top})`)
+        .attr("cy", d => yScale(d.hammer_price_bp_usd + 1))
+
+      svg.select(".yAxis")
+        .transition()
+          .duration(delay)
+          .ease(d3.easeLinear)
+          .call(yAxis);
+
+      // show lot image on mouse over, remove on mouse out
+      d3.selectAll("circle").on("mouseover", function(d, i) {
+        svg.append("svg:image")
+          .attr("class", "lot-image")
+          .attr("x", xScale(new Date(d.auc_date)) + 10)
+          .attr("transform", `translate (${margin.left}, ${margin.top})`)
+          .attr("y", yScale(d.hammer_price_bp_usd + 1) + 10)
+          .attr("width", 200)
+          .attr("height", 200)
+          .attr("xlink:href", d.external_image_url)
+
+        svg.append("text")
+          .attr("class", "price-text")
+          .attr("x", xScale(new Date(d.auc_date)) + 75)
+          .attr("transform", `translate (${margin.left}, ${margin.top})`)
+          .attr("y", yScale(d.hammer_price_bp_usd + 1) + 5)
+          .attr("text-decoration", "underline")
+          .text("$" + addCommas(Math.round(d.hammer_price_bp_usd)));
+
+      }).on("mouseout", function(d, i) {
+        d3.select(".lot-image").remove();
+        d3.select(".price-text").remove();
+      });
+    }
+
+    // check which arrow was clicked and update accordingly
+    d3.selectAll("h1").on("click", function () {
+      var arrow = d3.select(this).attr("id");
+      var l_side = 0;
+      var r_side = innerWidth + 75;
+
+      if (arrow == "scroll_right") {
+        currentYear += 1
+        if(currentYear > 2018)
+          currentYear = 2018
+        else
+          updateDataTo(currentYear, r_side, l_side)
+      } else if (arrow == "scroll_left") {
+        currentYear -= 1
+        if(currentYear < 2006)
+          currentYear = 2006
+        else
+          updateDataTo(currentYear, l_side, r_side)
+      }
+    });
+
+    // show lot image on mouse over, remove on mouse out
+    d3.selectAll("circle").on("mouseover", function(d, i) {
+      svg.append("svg:image")
+        .attr("class", "lot-image")
+        .attr("x", xScale(new Date(d.auc_date)) + 10)
+        .attr("transform", `translate (${margin.left}, ${margin.top})`)
+        .attr("y", yScale(d.hammer_price_bp_usd + 1) + 10)
+        .attr("width", 200)
+        .attr("height", 200)
+        .attr("xlink:href", d.external_image_url)
+
+      svg.append("text")
+        .attr("class", "price-text")
+        .attr("x", xScale(new Date(d.auc_date)) + 75)
+        .attr("transform", `translate (${margin.left}, ${margin.top})`)
+        .attr("y", yScale(d.hammer_price_bp_usd + 1) + 5)
+        .attr("text-decoration", "underline")
+        .text("$" + addCommas(Math.round(d.hammer_price_bp_usd)));
+
+    }).on("mouseout", function(d, i) {
+      d3.select(".lot-image").remove();
+      d3.select(".price-text").remove();
+    });
+
+      const addCommas = (x) => {
+        return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+      }
+
+  });
+
+  </script>
+
+  </body>
+</html>
+
+
+
+
+
