@@ -7,3 +7,4 @@ Edav_Project_cache/
 Edav_Project_files/
 app/.firebaserc
 app/config.json
+app/firebase-debug.log

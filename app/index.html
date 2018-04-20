@@ -51,6 +51,9 @@
       margin-right: 250px;
       margin-left: 150px;
     }
+    #subtext {
+      margin-left: 150px;
+    }
   </style>
   <body>
 
@@ -62,6 +65,9 @@
         <h1 id="scroll_left" class="glyphicon glyphicon-chevron-left left padding"></h1>
         <h1 class="left" id="current-year"></h1>
         <h1 id="scroll_right" class="glyphicon glyphicon-chevron-right left padding"></h1>
+        <br />
+        <br />
+        <p id="subtext" class="left"><b>Hammer Prices by Year (USD, 2006-2018)</b></p>
         <br />
         <br />
         <br />
@@ -265,10 +271,16 @@
 
       if (arrow == "scroll_right") {
         currentYear += 1
-        updateDataTo(currentYear, r_side, l_side)
+        if(currentYear > 2018)
+          currentYear = 2018
+        else
+          updateDataTo(currentYear, r_side, l_side)
       } else if (arrow == "scroll_left") {
         currentYear -= 1
-        updateDataTo(currentYear, l_side, r_side)
+        if(currentYear < 2006)
+          currentYear = 2006
+        else
+          updateDataTo(currentYear, l_side, r_side)
       }
     });
 
