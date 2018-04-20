@@ -10,13 +10,46 @@
     .left {
       float: left;
     }
-    .margin {
-      margin-right: 250px;
-      margin-left: 100px;
-    }
-
     .padding {
       padding: 0 10px;
+    }
+    .color {
+      padding: 0 20px;
+    }
+    .blue {
+      color: blue;
+    }
+    .red {
+      color: red;
+    }
+    .green {
+      color: green;
+    }
+    .yellow {
+      color: yellow;
+    }
+    .orange {
+      color: orange;
+    }
+    .fuchsia {
+      color: fuchsia;
+    }
+    .aqua {
+      color: aqua;
+    }
+    .maroon {
+      color: maroon;
+    }
+    .glyphicon-stop {
+      padding-right: 2px;
+    }
+    #color-key {
+      margin-left: 100px;
+      text-align: center;
+    }
+    #title {
+      margin-right: 250px;
+      margin-left: 150px;
     }
   </style>
   <body>
@@ -24,16 +57,17 @@
   <div class="container">
     <div class="row">
       <div class="col-xs-12">
-        <h1 class="left margin">Art Auction Visualization</h1>
+        <h1 id="title" class="left">Art Auction Visualization</h1>
 
         <h1 id="scroll_left" class="glyphicon glyphicon-chevron-left left padding"></h1>
         <h1 class="left" id="current-year"></h1>
         <h1 id="scroll_right" class="glyphicon glyphicon-chevron-right left padding"></h1>
+        <br />
+        <br />
+        <br />
+        <br />
+        <div id="color-key"></div>
         <div id="timeline"></div>
-
-        <p id="add">Add an element</p>
-        <p id="remove_left">Remove bar (left)</p>
-        <p id="remove_right">Remove bar (right)</p>
       </div>
     </div>
   </div>
@@ -86,24 +120,30 @@
       .scale(yScale);
 
     // Add initial circles
-    var colorMap = {"NEW YORK": "blue",
-                    "LONDON": "red",
-                    "PARIS": "yellow",
-                    "AMSTERDAM": "green",
-                    "MILAN": "maroon",
-                    "HONG KONG": "fuchsia",
-                    "DOHA": "aqua",
-                    "DUBAI": "orange" }
+    var colorMap = [{"location": "NEW YORK", "color": "blue"},
+                    {"location": "LONDON", "color": "red"},
+                    {"location": "PARIS", "color": "green"},
+                    {"location": "AMSTERDAM", "color": "yellow"},
+                    {"location": "MILAN", "color": "orange"},
+                    {"location": "HONG KONG", "color": "fuchsia"},
+                    {"location": "DOHA", "color": "aqua"},
+                    {"location": "DUBAI", "color": "maroon"}]
+
+    var html = colorMap.map(function(src) {
+      return '<div class="left color"><span class="glyphicon glyphicon-stop ' + src.color + '"></span>' + src.location + '</div>';
+    }).join('');
+
+    document.getElementById("color-key").innerHTML = html;
 
     var circles = svg.selectAll("circles").data(displayData);
 
     circles.enter().append("circle")
-      .attr("cx", d => xScale(d.timeline_days % 366))// + Math.random(-1,1)*50
+      .attr("cx", d => xScale(d.timeline_days % 366))// + Math.random(-1,1)*5
       .attr("transform", `translate (${margin.left}, ${margin.top})`)
       .attr("cy", d => yScale(Math.log10(d.hammer_price_bp_usd + 1)))
       // .attr("transform", `translate (${margin.left}, ${h - margin.bottom})`)
       .attr("r", 3)
-      .attr("fill", d => colorMap[d.location] || "black");
+      .attr("fill", d => colorMap.find(function (obj) { return obj.location === d.location; }).color || "black");
 
     // append axes
     svg.append("g")
@@ -118,7 +158,7 @@
     // General Update Pattern
     function updateDataTo(year, enterPos, exitPos) {
 
-      delay = 500
+      delay = 300
 
       document.getElementById("current-year").innerHTML = year;
 
@@ -137,8 +177,6 @@
       // first remove old data
       var circles = svg.selectAll("circle").data([]);
 
-      console.log("exit:" + exitPos);
-
       circles.exit()
         .transition()
         .duration(delay)
@@ -148,20 +186,18 @@
       // then update new data
       circles = svg.selectAll("circles").data(newData);
 
-      console.log(circles.enter())
-
       circles.enter().append("circle")
         .attr("cx", enterPos)
         .attr("transform", `translate (${margin.left}, ${margin.top})`)
         .attr("cy", d => yScale(Math.log10(d.hammer_price_bp_usd + 1)))
         // .attr("transform", `translate (${margin.left}, ${h - margin.bottom})`)
         .attr("r", 3)
-        .attr("fill", d => colorMap[d.location] || "black")
+        .attr("fill", d => colorMap.find(function (obj) { return obj.location === d.location; }).color || "black")
         .merge(circles)
         .transition()
         .duration(delay)
         .ease(d3.easeLinear)
-        .attr("cx", d => xScale(d.timeline_days % 366))// + Math.random(-1,1)*50
+        .attr("cx", d => xScale(d.timeline_days % 366))// + Math.random(-1,1)*5
         .attr("transform", `translate (${margin.left}, ${margin.top})`)
         .attr("cy", d => yScale(Math.log10(d.hammer_price_bp_usd + 1)))
 
@@ -170,6 +206,30 @@
           .duration(delay)
           .ease(d3.easeLinear)
           .call(yAxis);
+
+      // show lot image on mouse over, remove on mouse out
+      d3.selectAll("circle").on("mouseover", function(d, i) {
+        svg.append("svg:image")
+          .attr("class", "lot-image")
+          .attr("x", xScale(d.timeline_days % 366) + 10)
+          .attr("transform", `translate (${margin.left}, ${margin.top})`)
+          .attr("y", yScale(Math.log10(d.hammer_price_bp_usd + 1)) + 10)
+          .attr("width", 200)
+          .attr("height", 200)
+          .attr("xlink:href", d.external_image_url)
+
+        svg.append("text")
+          .attr("class", "price-text")
+          .attr("x", xScale(d.timeline_days % 366) + 75)
+          .attr("transform", `translate (${margin.left}, ${margin.top})`)
+          .attr("y", yScale(Math.log10(d.hammer_price_bp_usd + 1)) + 5)
+          .attr("text-decoration", "underline")
+          .text("$" + addCommas(Math.round(d.hammer_price_bp_usd)));
+
+      }).on("mouseout", function(d, i) {
+        d3.select(".lot-image").remove();
+        d3.select(".price-text").remove();
+      });
     }
 
     // check which arrow was clicked and update accordingly
@@ -190,166 +250,39 @@
     });
 
     // show lot image on mouse over, remove on mouse out
-    d3.selectAll("circle").on("mouseover", function(d, i) {
-      svg.append("svg:image")
-        .attr("class", "lot-image")
-        .attr("x", xScale(d.timeline_days % 366) + 10)
-        .attr("transform", `translate (${margin.left}, ${margin.top})`)
-        .attr("y", yScale(Math.log10(d.hammer_price_bp_usd + 1)) + 10)
-        .attr("width", 200)
-        .attr("height", 200)
-        .attr("xlink:href", d.external_image_url)
+      d3.selectAll("circle").on("mouseover", function(d, i) {
+        svg.append("svg:image")
+          .attr("class", "lot-image")
+          .attr("x", xScale(d.timeline_days % 366) + 10)
+          .attr("transform", `translate (${margin.left}, ${margin.top})`)
+          .attr("y", yScale(Math.log10(d.hammer_price_bp_usd + 1)) + 10)
+          .attr("width", 200)
+          .attr("height", 200)
+          .attr("xlink:href", d.external_image_url)
 
-    }).on("mouseout", function(d, i) {
-      d3.select(".lot-image").remove()
-    });
+        svg.append("text")
+          .attr("class", "price-text")
+          .attr("x", xScale(d.timeline_days % 366) + 75)
+          .attr("transform", `translate (${margin.left}, ${margin.top})`)
+          .attr("y", yScale(Math.log10(d.hammer_price_bp_usd + 1)) + 5)
+          .attr("text-decoration", "underline")
+          .text("$" + addCommas(Math.round(d.hammer_price_bp_usd)));
+
+      }).on("mouseout", function(d, i) {
+        d3.select(".lot-image").remove();
+        d3.select(".price-text").remove();
+      });
+
+      const addCommas = (x) => {
+        return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+      }
 
   });
-
-
-
-
-  // var dur = 500;
-
-  // var bardata = [300, 100, 150, 220, 70, 270]
-  //     .map((value, key) => ({key, value}));
-
-  // var xScale = d3.scaleBand()
-  //     .domain(d3.range(bardata.length))
-  //     .range([0, innerWidth])
-  //     // .paddingInner(.1);
-  // var yScale = d3.scaleLinear()
-  //     .domain([0, d3.max(bardata, d => d.value)])
-  //     .range([innerHeight, 0]);
-  // var xAxis = d3.axisBottom()
-  //     .scale(xScale);
-  // var yAxis = d3.axisLeft()
-  //     .scale(yScale);
-  // var bars = svg.append("g")
-  //     .attr("id", "plot")
-  //     .attr("transform", `translate (${margin.left}, ${margin.top})`)
-  //   .selectAll("rect")
-  //     .data(bardata, d => d.key);                   // CHANGE
-  // bars.enter().append("rect")
-  //     .attr("class", "bar")
-  //     .attr("x", (d, i) => xScale(i))
-  //     .attr("y", d => yScale(d.value))              // CHANGE
-  //     .attr("width", xScale.bandwidth())
-  //     .attr("height", d => innerHeight - yScale(d.value)) // CHANGE
-  //     .attr("fill","blue");
-
-
 
   </script>
 
   </body>
 </html>
-
-
-<!-- <!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <title>Seconds</title>
-    <script src="https://d3js.org/d3.v4.min.js"> ></script>
-  </head>
-  <body>
-    <h3>Click here to update</h3>
-
-    <script type="text/javascript">
-
-      //Width and height
-      var w = 400;
-      var h = 400;
-
-      var margin = {top: 25, right: 25, bottom: 25, left: 25};
-      var innerHeight = h - margin.top - margin.bottom;
-      var innerWidth = w - margin.left - margin.right; 
-
-      var d = new Date();
-      var seconds = d.getSeconds();
-
-      var dataset = d3.range(seconds)
-          .map( () => ({x: Math.floor(Math.random() * innerWidth),
-                        y: Math.floor(Math.random() * innerHeight)}) );
-
-      // Create SVG element
-      var svg = d3.select("body")
-        .append("svg")
-        .attr("width", w)
-        .attr("height", h);
-
-      // Add background rectangle
-      svg.append("rect")
-        .attr("x", 0)
-        .attr("y", 0)
-        .attr("width", w)
-        .attr("height", h)
-        .attr("fill", "lightblue");
-
-      // Add initial circles
-      var circles = svg.selectAll("circles").data(dataset);
-
-      circles.enter().append("circle")
-        .attr("cy", d => d.y)
-        .attr("cx", d => d.x)
-        .attr("r", 10)
-        .attr("fill", "red")
-        .merge(circles);
-
-    // General Update Pattern (triggered on click)
-    function update(data) {
-      if (data > 0){
-        dataset = dataset.concat(d3.range(data)
-          .map( () => ({x: Math.floor(Math.random() * innerWidth),
-                        y: Math.floor(Math.random() * innerHeight)}))
-        );
-
-        circles = svg.selectAll("circle").data(dataset);
-        circles.enter().append("circle")
-          .attr("cy", d => d.y)
-          .attr("cx", d => d.x)
-          .attr("r", 10)
-          .attr("fill", "blue")
-          .merge(circles)
-      }
-      else {
-        dataset.splice(dataset.length + data, -data)
-        circles = svg.selectAll("circle").data(dataset);
-        circles.exit()
-          .transition()
-          .duration(1000)
-          .attr("cy", h)
-          .remove()
-      }
-    }
-
-    d3.select("h3").on("click", function() {
-
-      var seconds_i = new Date().getSeconds();
-      var delta = seconds_i - seconds
-
-      update(delta)
-
-      seconds = seconds_i;
-
-      svg.selectAll("circle").data(dataset)
-        .transition()
-        .duration(2000)
-        .attr("fill", "yellow")
-        .transition()
-        .duration(2000)
-        .attr("fill", "red");
-
-     });
-
-    </script>
-  </body>
-</html>
-
- -->
-
-
 
 
 
