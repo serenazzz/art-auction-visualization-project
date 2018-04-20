@@ -90,16 +90,15 @@
     .attr("height", h);
 
   svg.append("rect")
-    .attr("x", margin.left - 25)
+    .attr("x", margin.left - 75)
     .attr("y", margin.top - 25)
-    .attr("width", innerWidth + 50)
+    .attr("width", innerWidth + 150)
     .attr("height", innerHeight + 50)
     .attr("fill", "gray")
     .attr("fill-opacity", .05);
 
   d3.json("interactive.json", function(error, data) {
 
-    // console.log(data)
     // filter initial data based on year
     var displayData = data.filter(function(lot) {
       return lot.auc_year == currentYear;
@@ -110,8 +109,8 @@
       .domain([new Date(currentYear, 0, 1), new Date(currentYear, 11, 31)])
       .range([0, innerWidth])
 
-    var yScale = d3.scaleLinear()
-      .domain([0, d3.max(displayData, d => Math.log10(d.hammer_price_bp_usd + 1))])
+    var yScale = d3.scaleLog()
+      .domain([1, d3.max(displayData, d => d.hammer_price_bp_usd)])
       .range([innerHeight, 0]);
 
     var xAxis = d3.axisBottom()
@@ -120,7 +119,9 @@
       .tickFormat(d3.timeFormat("%B"))
 
     var yAxis = d3.axisLeft()
-      .scale(yScale);
+      .scale(yScale)
+      .tickFormat(function (d) {
+        return yScale.tickFormat(4, d3.format("$,d"))(d)});
 
     // Add initial circles
     var colorMap = [{"location": "NEW YORK", "color": "blue"},
@@ -143,7 +144,7 @@
     circles.enter().append("circle")
       .attr("cx", d => xScale(new Date(d.auc_date)))// + Math.random(-1,1)*5
       .attr("transform", `translate (${margin.left}, ${margin.top})`)
-      .attr("cy", d => yScale(Math.log10(d.hammer_price_bp_usd + 1)))
+      .attr("cy", d => yScale(d.hammer_price_bp_usd + 1))
       // .attr("transform", `translate (${margin.left}, ${h - margin.bottom})`)
       .attr("r", 3)
       .attr("fill", d => colorMap.find(function (obj) { return obj.location === d.location; }).color || "black");
@@ -165,21 +166,17 @@
 
       document.getElementById("current-year").innerHTML = year;
 
-      console.log(year)
-
       var newData = data.filter(function(lot) {
         return lot.auc_year == year;
       });
-
-      console.log(newData);
 
       // update y axis scale
       var xScale = d3.scaleLinear()
         .domain([new Date(year, 0, 1), new Date(year, 11, 31)])
         .range([0, innerWidth])
 
-      var yScale = d3.scaleLinear()
-        .domain([0, d3.max(newData, d => Math.log10(d.hammer_price_bp_usd + 1))])
+      var yScale = d3.scaleLog()
+        .domain([1, d3.max(newData, d => d.hammer_price_bp_usd + 1)])
         .range([innerHeight, 0]);
 
       var xAxis = d3.axisBottom()
@@ -188,7 +185,9 @@
         .tickFormat(d3.timeFormat("%B"))
 
       var yAxis = d3.axisLeft()
-        .scale(yScale);
+        .scale(yScale)
+        .tickFormat(function (d) {
+        return yScale.tickFormat(4, d3.format("$,d"))(d)});
 
       // first remove old data
       var circles = svg.selectAll("circle").data([]);
@@ -205,7 +204,7 @@
       circles.enter().append("circle")
         .attr("cx", enterPos)
         .attr("transform", `translate (${margin.left}, ${margin.top})`)
-        .attr("cy", d => yScale(Math.log10(d.hammer_price_bp_usd + 1)))
+        .attr("cy", d => yScale(d.hammer_price_bp_usd + 1))
         // .attr("transform", `translate (${margin.left}, ${h - margin.bottom})`)
         .attr("r", 3)
         .attr("fill", d => colorMap.find(function (obj) { return obj.location === d.location; }).color || "black")
@@ -215,13 +214,7 @@
         .ease(d3.easeLinear)
         .attr("cx", d => xScale(new Date(d.auc_date)))// + Math.random(-1,1)*5
         .attr("transform", `translate (${margin.left}, ${margin.top})`)
-        .attr("cy", d => yScale(Math.log10(d.hammer_price_bp_usd + 1)))
-
-      // svg.select(".xAxis")
-      //   .transition()
-      //     .duration(delay)
-      //     .ease(d3.easeLinear)
-      //     .call(xAxis);
+        .attr("cy", d => yScale(d.hammer_price_bp_usd + 1))
 
       svg.select(".yAxis")
         .transition()
@@ -235,7 +228,7 @@
           .attr("class", "lot-image")
           .attr("x", xScale(new Date(d.auc_date)) + 10)
           .attr("transform", `translate (${margin.left}, ${margin.top})`)
-          .attr("y", yScale(Math.log10(d.hammer_price_bp_usd + 1)) + 10)
+          .attr("y", yScale(d.hammer_price_bp_usd + 1) + 10)
           .attr("width", 200)
           .attr("height", 200)
           .attr("xlink:href", d.external_image_url)
@@ -244,7 +237,7 @@
           .attr("class", "price-text")
           .attr("x", xScale(new Date(d.auc_date)) + 75)
           .attr("transform", `translate (${margin.left}, ${margin.top})`)
-          .attr("y", yScale(Math.log10(d.hammer_price_bp_usd + 1)) + 5)
+          .attr("y", yScale(d.hammer_price_bp_usd + 1) + 5)
           .attr("text-decoration", "underline")
           .text("$" + addCommas(Math.round(d.hammer_price_bp_usd)));
 
@@ -258,12 +251,10 @@
     d3.selectAll("h1").on("click", function () {
       var arrow = d3.select(this).attr("id");
       var l_side = 0;
-      var r_side = innerWidth + 25;
+      var r_side = innerWidth + 75;
 
       if (arrow == "scroll_right") {
         currentYear += 1
-        var enterpos = w;
-        var exitpos = w;
         updateDataTo(currentYear, r_side, l_side)
       } else if (arrow == "scroll_left") {
         currentYear -= 1
@@ -277,7 +268,7 @@
         .attr("class", "lot-image")
         .attr("x", xScale(new Date(d.auc_date)) + 10)
         .attr("transform", `translate (${margin.left}, ${margin.top})`)
-        .attr("y", yScale(Math.log10(d.hammer_price_bp_usd + 1)) + 10)
+        .attr("y", yScale(d.hammer_price_bp_usd + 1) + 10)
         .attr("width", 200)
         .attr("height", 200)
         .attr("xlink:href", d.external_image_url)
@@ -286,7 +277,7 @@
         .attr("class", "price-text")
         .attr("x", xScale(new Date(d.auc_date)) + 75)
         .attr("transform", `translate (${margin.left}, ${margin.top})`)
-        .attr("y", yScale(Math.log10(d.hammer_price_bp_usd + 1)) + 5)
+        .attr("y", yScale(d.hammer_price_bp_usd + 1) + 5)
         .attr("text-decoration", "underline")
         .text("$" + addCommas(Math.round(d.hammer_price_bp_usd)));
 
