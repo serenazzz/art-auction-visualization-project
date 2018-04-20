@@ -72,6 +72,16 @@
     </div>
   </div>
 
+  <script src="https://www.gstatic.com/firebasejs/4.13.0/firebase.js"></script>
+  <script>
+    // This is not related to d3, I'm just conveniently using d3 to read
+    // my json file for firebase configuration credentials
+    d3.json("config.json", function(error, data) {
+      // Initialize Firebase
+      var config = data;
+      firebase.initializeApp(config);
+    });
+  </script>
   <script>
 
   // Create svg and initial circles
