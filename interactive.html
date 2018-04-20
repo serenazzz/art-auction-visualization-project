@@ -99,6 +99,7 @@
 
   d3.json("interactive.json", function(error, data) {
 
+    // console.log(data)
     // filter initial data based on year
     var displayData = data.filter(function(lot) {
       return lot.auc_year == currentYear;
@@ -106,7 +107,7 @@
 
     // set axes scales
     var xScale = d3.scaleLinear()
-      .domain([0,365])
+      .domain([new Date(currentYear, 0, 1), new Date(currentYear, 11, 31)])
       .range([0, innerWidth])
 
     var yScale = d3.scaleLinear()
@@ -114,7 +115,9 @@
       .range([innerHeight, 0]);
 
     var xAxis = d3.axisBottom()
-      .scale(xScale);
+      .scale(xScale)
+      .ticks(6)
+      .tickFormat(d3.timeFormat("%B"))
 
     var yAxis = d3.axisLeft()
       .scale(yScale);
@@ -127,7 +130,7 @@
                     {"location": "MILAN", "color": "orange"},
                     {"location": "HONG KONG", "color": "fuchsia"},
                     {"location": "DOHA", "color": "aqua"},
-                    {"location": "DUBAI", "color": "maroon"}]
+                    {"location": "DUBAI", "color": "maroon"}];
 
     var html = colorMap.map(function(src) {
       return '<div class="left color"><span class="glyphicon glyphicon-stop ' + src.color + '"></span>' + src.location + '</div>';
@@ -138,7 +141,7 @@
     var circles = svg.selectAll("circles").data(displayData);
 
     circles.enter().append("circle")
-      .attr("cx", d => xScale(d.timeline_days % 366))// + Math.random(-1,1)*5
+      .attr("cx", d => xScale(new Date(d.auc_date)))// + Math.random(-1,1)*5
       .attr("transform", `translate (${margin.left}, ${margin.top})`)
       .attr("cy", d => yScale(Math.log10(d.hammer_price_bp_usd + 1)))
       // .attr("transform", `translate (${margin.left}, ${h - margin.bottom})`)
@@ -162,14 +165,27 @@
 
       document.getElementById("current-year").innerHTML = year;
 
+      console.log(year)
+
       var newData = data.filter(function(lot) {
-        return lot.auc_year == currentYear;
+        return lot.auc_year == year;
       });
 
+      console.log(newData);
+
       // update y axis scale
+      var xScale = d3.scaleLinear()
+        .domain([new Date(year, 0, 1), new Date(year, 11, 31)])
+        .range([0, innerWidth])
+
       var yScale = d3.scaleLinear()
         .domain([0, d3.max(newData, d => Math.log10(d.hammer_price_bp_usd + 1))])
         .range([innerHeight, 0]);
+
+      var xAxis = d3.axisBottom()
+        .scale(xScale)
+        .ticks(6)
+        .tickFormat(d3.timeFormat("%B"))
 
       var yAxis = d3.axisLeft()
         .scale(yScale);
@@ -197,9 +213,15 @@
         .transition()
         .duration(delay)
         .ease(d3.easeLinear)
-        .attr("cx", d => xScale(d.timeline_days % 366))// + Math.random(-1,1)*5
+        .attr("cx", d => xScale(new Date(d.auc_date)))// + Math.random(-1,1)*5
         .attr("transform", `translate (${margin.left}, ${margin.top})`)
         .attr("cy", d => yScale(Math.log10(d.hammer_price_bp_usd + 1)))
+
+      // svg.select(".xAxis")
+      //   .transition()
+      //     .duration(delay)
+      //     .ease(d3.easeLinear)
+      //     .call(xAxis);
 
       svg.select(".yAxis")
         .transition()
@@ -211,7 +233,7 @@
       d3.selectAll("circle").on("mouseover", function(d, i) {
         svg.append("svg:image")
           .attr("class", "lot-image")
-          .attr("x", xScale(d.timeline_days % 366) + 10)
+          .attr("x", xScale(new Date(d.auc_date)) + 10)
           .attr("transform", `translate (${margin.left}, ${margin.top})`)
           .attr("y", yScale(Math.log10(d.hammer_price_bp_usd + 1)) + 10)
           .attr("width", 200)
@@ -220,7 +242,7 @@
 
         svg.append("text")
           .attr("class", "price-text")
-          .attr("x", xScale(d.timeline_days % 366) + 75)
+          .attr("x", xScale(new Date(d.auc_date)) + 75)
           .attr("transform", `translate (${margin.left}, ${margin.top})`)
           .attr("y", yScale(Math.log10(d.hammer_price_bp_usd + 1)) + 5)
           .attr("text-decoration", "underline")
@@ -236,7 +258,7 @@
     d3.selectAll("h1").on("click", function () {
       var arrow = d3.select(this).attr("id");
       var l_side = 0;
-      var r_side = innerWidth + 50;
+      var r_side = innerWidth + 25;
 
       if (arrow == "scroll_right") {
         currentYear += 1
@@ -250,28 +272,28 @@
     });
 
     // show lot image on mouse over, remove on mouse out
-      d3.selectAll("circle").on("mouseover", function(d, i) {
-        svg.append("svg:image")
-          .attr("class", "lot-image")
-          .attr("x", xScale(d.timeline_days % 366) + 10)
-          .attr("transform", `translate (${margin.left}, ${margin.top})`)
-          .attr("y", yScale(Math.log10(d.hammer_price_bp_usd + 1)) + 10)
-          .attr("width", 200)
-          .attr("height", 200)
-          .attr("xlink:href", d.external_image_url)
+    d3.selectAll("circle").on("mouseover", function(d, i) {
+      svg.append("svg:image")
+        .attr("class", "lot-image")
+        .attr("x", xScale(new Date(d.auc_date)) + 10)
+        .attr("transform", `translate (${margin.left}, ${margin.top})`)
+        .attr("y", yScale(Math.log10(d.hammer_price_bp_usd + 1)) + 10)
+        .attr("width", 200)
+        .attr("height", 200)
+        .attr("xlink:href", d.external_image_url)
 
-        svg.append("text")
-          .attr("class", "price-text")
-          .attr("x", xScale(d.timeline_days % 366) + 75)
-          .attr("transform", `translate (${margin.left}, ${margin.top})`)
-          .attr("y", yScale(Math.log10(d.hammer_price_bp_usd + 1)) + 5)
-          .attr("text-decoration", "underline")
-          .text("$" + addCommas(Math.round(d.hammer_price_bp_usd)));
+      svg.append("text")
+        .attr("class", "price-text")
+        .attr("x", xScale(new Date(d.auc_date)) + 75)
+        .attr("transform", `translate (${margin.left}, ${margin.top})`)
+        .attr("y", yScale(Math.log10(d.hammer_price_bp_usd + 1)) + 5)
+        .attr("text-decoration", "underline")
+        .text("$" + addCommas(Math.round(d.hammer_price_bp_usd)));
 
-      }).on("mouseout", function(d, i) {
-        d3.select(".lot-image").remove();
-        d3.select(".price-text").remove();
-      });
+    }).on("mouseout", function(d, i) {
+      d3.select(".lot-image").remove();
+      d3.select(".price-text").remove();
+    });
 
       const addCommas = (x) => {
         return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
