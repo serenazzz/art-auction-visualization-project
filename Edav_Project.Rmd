@@ -492,8 +492,13 @@ vcd::mosaic(hammer_price_bp_usd_range~is_untitled, direction = c("v", "h"),df1,
                  labeling = labeling_border(rot_labels = c(0, 45),pos_labels="center"))
 ```
 #### Are they mostly contemprary? 
-```{r}
-#untitle_labels = read.csv("untitle_ratio.csv", header=TRUE)
+```{r, fig.width=5}
+untitle_ratio = read.csv("untitle_ratio.csv", header=TRUE)
+#tempstr <-  strtrim(untitle_ratio$auc_title, 20)
+#untitle_ratio$auc_title <- tempstr
+untitle_ratio$is_contemporary = as.factor(untitle_ratio$is_contemporary)
+ggplot(data=untitle_ratio, aes(x=reorder(auc_title,ratio), y=ratio,fill=is_contemporary))+geom_bar(stat="identity")+coord_flip()
+```
 ```
 ### Does the era of the lot affect its price?
 ```{r}
