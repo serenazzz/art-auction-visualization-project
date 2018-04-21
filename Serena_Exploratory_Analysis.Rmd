@@ -38,33 +38,78 @@ df2 <- df1 %>%
 ## Auction Information
 
 ```{r }
-ggplot(df2,aes(x=hammer_price_bp_usd))+geom_histogram(aes(y=..density..))+geom_density()
+#ggplot(df2,aes(x=hammer_price_bp_usd))+geom_histogram(aes(y=..density..))+geom_density()
 ```
 
 ## Do Certain Lot Attributes Result in Higher Price?
-### What are the top words in lot title that are related to higher price? 
-(word cloud)
-### Looking at Untitle, what price ranges are they in? Is it correlated?
+### lot titles
+#### What lots have higher price? 
+```{r}
+df_wordcloud <- df1[,c("lot_title","hammer_price_bp_usd")]
+df_wordcloud <- arrange(df_wordcloud,desc(df_wordcloud$hammer_price_bp_usd))[1:500,]
+library(wordcloud)
+library(tm)
+pal <- brewer.pal(9, "OrRd")
+pal <- pal[-(1:3)]
+wordcloud(df_wordcloud$lot_title, df_wordcloud$hammer_price_bp_usd, min.freq=500, scale=c(5, .5), random.order = FALSE, random.color = FALSE, colors= pal)
+```
+#### What are the top words in lot title that are related to higher price? 
+```{r}
+# collapse the lot_title column by word and count the frequency they appear in the titles.
+temp <- paste(df1$lot_title, collapse=' ' )
+temp <- tolower(temp)
+temp <- gsub(" *\\b[[:alpha:]]{1}\\b *", " ", temp)
+temp <- gsub('[[:punct:] ]+',' ',temp)
+temp <- as.list(strsplit(temp, " "))
+temp <- unlist(temp)[!(unlist(temp) %in% stopwords("english"))]
+temp <- unlist(temp)[!(unlist(temp) %in% "na")]
+word_count <- na.omit(as.data.frame(table(temp)))
+word_count <- arrange(word_count,desc(word_count$Freq))[1:300,]
+
+# visualize word frequencies
+pal <- brewer.pal(9, "Dark2")
+wordcloud(word_count$temp, word_count$Freq, min.freq =20, scale=c(5, .5), random.order = FALSE, random.color = FALSE, colors= pal)
+```
+#### Looking at Untitle, what price ranges are they in? Is it correlated?
 ```{r}
 library(vcd)
+df1 <- df1 %>% 
+  dplyr::mutate(hammer_price_bp_usd_range = forcats::fct_relevel(hammer_price_bp_usd_range, "<$50,000"))%>%
+  dplyr::mutate(hammer_price_bp_usd_range = forcats::fct_relevel(hammer_price_bp_usd_range, "<$500,000"))%>%
+   dplyr::mutate(hammer_price_bp_usd_range = forcats::fct_relevel(hammer_price_bp_usd_range, "$500,000+"))
+
+
+
 vcd::mosaic(hammer_price_bp_usd_range~is_untitled, direction = c("v", "h"),df1,
        gp = gpar(fill = c("lightyellow", "lightpink")),
-                 labeling = labeling_border(rot_labels = c(0, 0)))
+                 labeling = labeling_border(rot_labels = c(0, 90),pos_labels="center"))
+
 ```
-### Are they mostly contemprary? 
-(divergent bar chart)
+#### Are they mostly contemprary? 
+```{r}
+#untitle_labels = read.csv("untitle_labels", header=TRUE)
+```
 ### Does the era of the lot affect its price?
 ```{r}
-df3 <- df2 %>%
+df3 <- df2 %>% 
   filter(df2$birth_year>1800)
 ggplot(df3, aes(birth_year,hammer_price_bp_usd))  + 
   geom_smooth(method='lm',formula=y ~ poly(x, 2))+
   geom_point(alpha = .1)  + 
   theme_grey(10)+scale_y_log10()+  geom_density_2d(bins = 5)
 ```
+```{r}
+#box plot price vs year
+#ggplot(df3, aes(x=auth_era), y=hammer_price_bp_usd)+ stat_summary(fun.y="mean", geom="line", aes(group=1))
+ggplot(df3, aes(auth_era, hammer_price_bp_usd)) +
+  geom_boxplot()+theme(axis.text.x = element_text(angle = 90, hjust = 1))+scale_y_log10()
+```
 ## Do Certain Extrernal Factors Result in Higher Price?
 ### Is there an impact from the financial crisis?
 ```{r}
+df1$auc_ymd <- as.Date(df1$auc_year_month_date)
+art_yearfin <- df1 %>% group_by(month=floor_date(auc_ymd, "month")) %>% summarise(revenue = mean(hammer_price_bp_usd))
+ggplot() +geom_line(data=art_yearfin, aes(x=month, y=revenue/1000000))+ggtitle("Financial Crisis' Effect on average lot price ($M)")+ylab("average price")+xlab("Time")+theme(axis.text.x = element_text(angle = 45, hjust = 1))+scale_y_log10()
 
 ```
 ###Does the Order Matter?
@@ -75,7 +120,14 @@ ggplot(df2, aes(percent_in_auction,hammer_price_bp_usd))  +
   theme_grey(10)+scale_y_log10()+
   facet_wrap(~location)
 ```
+###Does Season Matter?
+```{r}
+
+vcd::mosaic(hammer_price_bp_usd_range~auc_season, direction = c("v", "h"),df1,
+       gp = gpar(fill = c("lightyellow", "lightpink")),
+                 labeling = labeling_border(rot_labels = c(0, 90),pos_labels="center"))
+```
+###Does Location Matter?
 ```{r}
 ```
-
 ### How Accurate are the Estimates?
