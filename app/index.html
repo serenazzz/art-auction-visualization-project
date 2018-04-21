@@ -167,6 +167,7 @@
 
     var circles = svg.selectAll("circles").data(displayData);
 
+    console.log(displayData);
     circles.enter().append("circle")
       .attr("cx", d => xScale(new Date(d.auc_date)))
       .attr("transform", `translate (${margin.left}, ${margin.top})`)
@@ -174,6 +175,16 @@
       // .attr("transform", `translate (${margin.left}, ${h - margin.bottom})`)
       .attr("r", 2.5)
       .attr("fill", d => colorMap.find(function (obj) { return obj.location === d.location; }).color || "black");
+
+    console.log(circles.data());
+
+    svg.append("line")
+      .style("stroke", "black")
+      .attr("stroke-width", "3px")
+      .attr("x1", 100)     // x position of the first end of the line
+      .attr("y1", 100)
+      .attr("x2", 300)     // x position of the second end of the line
+      .attr("y2", 300);
 
     // append axes
     svg.append("g")
