@@ -48,11 +48,16 @@
       text-align: center;
     }
     #title {
-      margin-right: 250px;
       margin-left: 150px;
     }
     #subtext {
-      margin-left: 150px;
+      margin-left: 175px;
+    }
+    #jitter {
+      margin: 35px 0 0 20px;
+    }
+    #checkbox {
+      margin: 0 5px 0 0;
     }
   </style>
   <body>
@@ -60,19 +65,25 @@
   <div class="container">
     <div class="row">
       <div class="col-xs-12">
-        <h1 id="title" class="left">Art Auction Visualization</h1>
-
-        <h1 id="scroll_left" class="glyphicon glyphicon-chevron-left left padding"></h1>
-        <h1 class="left" id="current-year"></h1>
-        <h1 id="scroll_right" class="glyphicon glyphicon-chevron-right left padding"></h1>
-        <br />
-        <br />
-        <p id="subtext" class="left"><b>Hammer Prices by Year (USD, 2006-2018)</b></p>
-        <br />
-        <br />
-        <br />
-        <br />
-        <div id="color-key"></div>
+        <div class="row">
+          <div class="col-xs-6">
+            <h1 id="title" class="left">Art Auction Visualization</h1>
+          </div>
+          <div class="col-xs-2">
+            <h4 id="jitter"><input type="checkbox" id="checkbox"> Add jitter</h4>
+          </div>
+          <div class="col-xs-4">
+            <h1 id="scroll_left" class="glyphicon glyphicon-chevron-left left padding"></h1>
+            <h1 class="left" id="current-year"></h1>
+            <h1 id="scroll_right" class="glyphicon glyphicon-chevron-right left padding"></h1>
+          </div>
+        </div>
+        <div class="row">
+          <p id="subtext" class="left"><b>Hammer Prices by Year (USD, 2006-2018)</b></p>
+        </div>
+        <div class="row">
+          <div id="color-key"></div>
+        </div>
         <div id="timeline"></div>
       </div>
     </div>
@@ -89,7 +100,6 @@
     });
   </script>
   <script>
-
   // Create svg and initial circles
   var w = 1200;
   var h = 800;
@@ -158,11 +168,11 @@
     var circles = svg.selectAll("circles").data(displayData);
 
     circles.enter().append("circle")
-      .attr("cx", d => xScale(new Date(d.auc_date)))// + Math.random(-1,1)*5
+      .attr("cx", d => xScale(new Date(d.auc_date)))
       .attr("transform", `translate (${margin.left}, ${margin.top})`)
       .attr("cy", d => yScale(d.hammer_price_bp_usd + 1))
       // .attr("transform", `translate (${margin.left}, ${h - margin.bottom})`)
-      .attr("r", 3)
+      .attr("r", 2.5)
       .attr("fill", d => colorMap.find(function (obj) { return obj.location === d.location; }).color || "black");
 
     // append axes
@@ -222,13 +232,13 @@
         .attr("transform", `translate (${margin.left}, ${margin.top})`)
         .attr("cy", d => yScale(d.hammer_price_bp_usd + 1))
         // .attr("transform", `translate (${margin.left}, ${h - margin.bottom})`)
-        .attr("r", 3)
+        .attr("r", 2.5)
         .attr("fill", d => colorMap.find(function (obj) { return obj.location === d.location; }).color || "black")
         .merge(circles)
         .transition()
         .duration(delay)
         .ease(d3.easeLinear)
-        .attr("cx", d => xScale(new Date(d.auc_date)))// + Math.random(-1,1)*5
+        .attr("cx", d => xScale(new Date(d.auc_date)))
         .attr("transform", `translate (${margin.left}, ${margin.top})`)
         .attr("cy", d => yScale(d.hammer_price_bp_usd + 1))
 
@@ -308,9 +318,34 @@
       d3.select(".price-text").remove();
     });
 
-      const addCommas = (x) => {
-        return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    const addCommas = (x) => {
+      return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    }
+
+    var jitter = false;
+    d3.select("#checkbox").on("change",addJitter);
+
+    function addJitter(){
+      jitter = !jitter;
+
+      circles = svg.selectAll("circle");
+
+      // update y axis scale
+      var xScale = d3.scaleLinear()
+        .domain([new Date(currentYear, 0, 1), new Date(currentYear, 11, 31)])
+        .range([0, innerWidth])
+
+      if(jitter) {
+        circles.attr("cx", d => xScale(new Date(d.auc_date)) + randInRange(-1, 1)*30)
+      } else {
+        circles.attr("cx", d => xScale(new Date(d.auc_date)))
       }
+
+      // Returns a random number between min (inclusive) and max (exclusive)
+      function randInRange(min, max) {
+          return Math.random() * (max - min) + min;
+      }
+    }
 
   });
 
