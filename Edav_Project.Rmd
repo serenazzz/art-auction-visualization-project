@@ -139,7 +139,8 @@ In this part of the project, we will be exploring the quality of the data provid
 5. Added 'Average Estimate' column to reflect the aevrage price estimation between the high and the low
 6. Converted all currency to USD to be able to compare pieces sold across different locations. We matched the exchange rate at the time of the sell to properly convert all transactions.
 
-A complete logic with code can be found here: **INSERT LINK HERE**
+A complete logic with code can be found here: https://github.com/serenazzz/art-auction-visualizatoin-project/blob/master/Preprocessing_final.ipynb
+
 
 ## Data Quality Exploration
 
@@ -384,20 +385,16 @@ vcd::mosaic(hammer_price_bp_usd_range~auc_season, direction = c("v", "h"),df1,
 
 # Interactive Componenet
 
-
 Link to the interactive part: https://edav-art-viz.firebaseapp.com
 
+### Description ### 
 
-**Description:** This view allows users to see all of the lots sold by their price and timestamp. Each color represents a different location. This visualization supports the project's main hypothesis that location significantly affects the auction performance.
+This view allows users to see all of the lots sold by their price and timeframe. Each color also represents a different location. This visualization supports the project's main hypothesis that location and season significantly affect the auction performance.
 
-As applicable, all of the following will be considered in the grading process:
+### Instructions ### 
 
-* Choice of data and plot types to present
+There are quite a few great aspect of this chart that could be very helpful for the user:
 
-* Clear relevance to question(s), project in general
-
-* Design of interactive component(s)
-
-* Clarity of presentation, including instructions
-
-* Technical execution (include a description of what you would work on in the future, what you've attempted, etc. so we know it's on your radar)
+1. **Change Year** - Click on the arrows next to the year to either move a year forward or backwards. This can help to compare the different distributions across all years in our dataset.
+2. **See Lot Details** - Hoover over each circle to see the details of the lot transaction. You should expect to see a window that is showing the hammer price as well as the picture of the lot. Keep in mind that a lot of the lots have their pictures protected by the copyright (so they will not show). Nonetheless, some of the later ones typicaally do:)
+2.  **Spread Data Points ** - to better see each data point for the details use the button on the top right that says: "Spread Data Points." This would jitter the points from their original location to better see all options. One can easily bring the points back to proper location by unclicking the button.
