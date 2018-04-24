@@ -167,7 +167,6 @@
 
     var circles = svg.selectAll("circles").data(displayData);
 
-    console.log(displayData);
     circles.enter().append("circle")
       .attr("cx", d => xScale(new Date(d.auc_date)))
       .attr("transform", `translate (${margin.left}, ${margin.top})`)
@@ -176,15 +175,34 @@
       .attr("r", 2.5)
       .attr("fill", d => colorMap.find(function (obj) { return obj.location === d.location; }).color || "black");
 
-    console.log(circles.data());
+    var yearAvg = [ {"year": 2006, "avg": 87349.239381},
+                    {"year": 2007, "avg": 136806.983869},
+                    {"year": 2008, "avg": 0},
+                    {"year": 2009, "avg": 165440.944540},
+                    {"year": 2010, "avg": 246727.238122},
+                    {"year": 2011, "avg": 123318.565553},
+                    {"year": 2012, "avg": 222119.085527},
+                    {"year": 2013, "avg": 488812.895422},
+                    {"year": 2014, "avg": 466449.762520},
+                    {"year": 2015, "avg": 613052.839521},
+                    {"year": 2016, "avg": 217353.244371},
+                    {"year": 2017, "avg": 294252.180225},
+                    {"year": 2018, "avg": 607385.137199}]
 
     svg.append("line")
+      .attr("class", "average")
       .style("stroke", "black")
-      .attr("stroke-width", "3px")
-      .attr("x1", 100)     // x position of the first end of the line
-      .attr("y1", 100)
-      .attr("x2", 300)     // x position of the second end of the line
-      .attr("y2", 300);
+      .attr("stroke-width", "2px")
+      .attr("x1", margin.left)     // x position of the first end of the line
+      .attr("y1", yScale(yearAvg.find(function (obj) {return obj.year === currentYear;}).avg))
+      .attr("x2", innerWidth + 100)     // x position of the second end of the line
+      .attr("y2", yScale(yearAvg.find(function (obj) {return obj.year === currentYear;}).avg))
+
+    svg.append("text")
+      .attr("class", "avg-text")
+      .attr("x", innerWidth + 101)
+      .attr("y", yScale(yearAvg.find(function (obj) {return obj.year === currentYear;}).avg)+3)
+      .text("average");
 
     // append axes
     svg.append("g")
@@ -252,6 +270,23 @@
         .attr("cx", d => xScale(new Date(d.auc_date)))
         .attr("transform", `translate (${margin.left}, ${margin.top})`)
         .attr("cy", d => yScale(d.hammer_price_bp_usd + 1))
+
+      svg.select(".average")
+        .transition()
+        .duration(delay)
+        .style("stroke", "black")
+        .attr("stroke-width", "2px")
+        .attr("x1", margin.left)     // x position of the first end of the line
+        .attr("y1", yScale(yearAvg.find(function (obj) {return obj.year === year;}).avg))
+        .attr("x2", innerWidth + 100)     // x position of the second end of the line
+        .attr("y2", yScale(yearAvg.find(function (obj) {return obj.year === year;}).avg));
+
+      svg.select(".avg-text")
+        .transition()
+        .duration(delay)
+        .attr("x", innerWidth + 101)
+        .attr("y", yScale(yearAvg.find(function (obj) {return obj.year === year;}).avg)+3)
+        .text("average");
 
       svg.select(".yAxis")
         .transition()
