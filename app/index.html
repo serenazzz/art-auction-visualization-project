@@ -110,6 +110,11 @@
   var currentYear = 2017
   document.getElementById("current-year").innerHTML = currentYear;
 
+  // for formmating numbers with commas
+  const addCommas = (x) => {
+    return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  }
+
   var svg = d3.select("#timeline")
     .append("svg")
     .attr("width", w)
@@ -198,11 +203,19 @@
       .attr("x2", innerWidth + 100)     // x position of the second end of the line
       .attr("y2", yScale(yearAvg.find(function (obj) {return obj.year === currentYear;}).avg))
 
+    var averagePrice = yearAvg.find(function (obj) {return obj.year === currentYear;}).avg
+
     svg.append("text")
       .attr("class", "avg-text")
-      .attr("x", innerWidth + 101)
-      .attr("y", yScale(yearAvg.find(function (obj) {return obj.year === currentYear;}).avg)+3)
-      .text("average");
+      .attr("x", innerWidth + 103)
+      .attr("y", yScale(averagePrice)-5)
+      .text("Average: ");
+
+    svg.append("text")
+      .attr("class", "avg-qty")
+      .attr("x", innerWidth + 103)
+      .attr("y", yScale(averagePrice)+10)
+      .text("$" + addCommas(Math.round(averagePrice)));
 
     // append axes
     svg.append("g")
@@ -271,22 +284,31 @@
         .attr("transform", `translate (${margin.left}, ${margin.top})`)
         .attr("cy", d => yScale(d.hammer_price_bp_usd + 1))
 
+      var averagePrice = yearAvg.find(function (obj) {return obj.year === year;}).avg
+
       svg.select(".average")
         .transition()
         .duration(delay)
         .style("stroke", "black")
         .attr("stroke-width", "2px")
         .attr("x1", margin.left)     // x position of the first end of the line
-        .attr("y1", yScale(yearAvg.find(function (obj) {return obj.year === year;}).avg))
+        .attr("y1", yScale(averagePrice))
         .attr("x2", innerWidth + 100)     // x position of the second end of the line
-        .attr("y2", yScale(yearAvg.find(function (obj) {return obj.year === year;}).avg));
+        .attr("y2", yScale(averagePrice));
 
       svg.select(".avg-text")
         .transition()
         .duration(delay)
-        .attr("x", innerWidth + 101)
-        .attr("y", yScale(yearAvg.find(function (obj) {return obj.year === year;}).avg)+3)
-        .text("average");
+        .attr("x", innerWidth + 103)
+        .attr("y", yScale(averagePrice)-5)
+        .text("Average: ");
+
+      svg.select(".avg-qty")
+        .transition()
+        .duration(delay)
+        .attr("x", innerWidth + 103)
+        .attr("y", yScale(averagePrice)+10)
+        .text("$" + addCommas(Math.round(averagePrice)));
 
       svg.select(".yAxis")
         .transition()
@@ -363,10 +385,6 @@
       d3.select(".lot-image").remove();
       d3.select(".price-text").remove();
     });
-
-    const addCommas = (x) => {
-      return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    }
 
     var jitter = false;
     d3.select("#checkbox").on("change",addJitter);
