@@ -28,21 +28,21 @@ library(grid)
 - paralell coord - hammer_price_bp_usd_range
 # Introduction
 
-### Study Topic & Questions of Interest
+### Introduction
 
 For our project we chose to perform an exploratory analysis and visualization on a dataset containing the historical auction prices of thousands of pieces of art. We chose this topic for a variety of reasons---whether you come from the arts and humanities, or economics and finance, art is an interesting and complex field. With new data starting to become available, for the first time we have the ability to analyze and better understand this historically opaque industry. It is a potential treasure trove for data scientists.
 
 For hundreds of years fine art has been valued by cultures throughout the world for its aesthetic and beauty, but fine art as an asset class also appeals to many people today as an attractive alternative investment that is largely non-correlated to the traditional stock market. The fine art asset class is estimated to have a global market value of over $60 billion in annual turnover and has historically outperformed the S&P 500 in terms of compound annual growth (specifically, 15-year CAGR). Geographically, the art market has for decades been dominated by the United States, United Kingdom and China with the greatest concentration of art sales in the entire world occurring right here in New York City.
 
-Each of our team members has a diverse background. In addition to experience as data scientists, a few of us have a background in economics and have worked for financial services companies. A few of us have also worked in the art industry for galleries or collectors. This topic was a cross-section of our experiences and interests that allowed us to explore timely questions about the prices and dynamics of the fine art market.
+Each of our team members has a diverse background. In addition to experience as data scientists, a few of us have a background in economics and have worked for financial services and tech  companies. A few of us have also worked in the art industry for galleries or collectors. This topic was a cross-section of our experiences and interests that allowed us to explore timely questions about the prices and dynamics of the fine art market.
 
 From a high level, the questions that intrigued us most were related to knowing more about the auction prices (called hammer price) for pieces of art in terms of different artists, location and time periods. We initially developed a large list of potential questions, and narrowed these down based on viability in terms of the data we had available as well as the scope and time constraints for the project. Some of the specific questions we decided to look at are:
 
 1. What is the distribution of quantity of lots and auctions by location, year, and season?
-2. What are the lot titles that have higher price/appear more?
-3. How is price related to artist’s era/when he was born?
+2. What are the lot titles that have higher price or appear more?
+3. How is price related to artist’s era/when he/she was born?
 4. Do auction prices vary by location and season?
-5. Did Financial Crisis have any effect on the average auction price by location?
+5. Did Financial Crisis have any effect on the auctions?
 6. Does the order in which the lot is presented affect the overall sell price?
 
 
@@ -63,22 +63,21 @@ The main contributor to the analysis around basic information was *Elizabet Doli
 
 ### Overview
 
-This dataset was provided by Arthena (https://arthena.com/). It was sourced from Sotheby’s historical auction data via the scraping of public web pages.  The raw dataset includes 22711 rows of data. Each row represents an individual lot from an auction (a lot could be an individual painting, a sculpture, or sometimes even a collection of works).  The raw dataset includes 25 columns of data.  Each column represents a feature related to either that specific lot, the artist of the lot, or the auction where the lot was sold.  Column definitions are listed below by category (Lot, Auction or Artist). For our analysis we also derive new columns from the original raw dataset. The derived column definitions are also listed below. Including these columns we ended with a total of 36 columns of data.  The detailed logic and thought process is described more in the 'Data Quality Analysis' section.
+This dataset was provided by Arthena (https://arthena.com/). It was sourced from Sotheby’s historical auction data via the scraping of public web pages.  The raw dataset includes 22711 rows of data. Each row represents an individual lot from an auction (a lot could be an individual painting, a sculpture, or sometimes even a collection of works).  The raw dataset includes 25 columns of data.  Each column represents a feature related to either that specific lot, the artist of the lot, or the auction where the lot was sold.  Column definitions are listed below by category (Lot, Auction or Artist). For our analysis we also derive new columns from the original raw dataset. The derived column definitions are also listed below. Including these columns we ended with a total of 43 columns of data.  The detailed logic and thought process is described more in the 'Data Quality Analysis' section.
 
 ```{r}
-art = read.csv("final_sothebys.csv", header=TRUE, na.strings=c("", NA))
-#Save as a data frame
-art_df <- as.data.frame(art)
+#Read data
+art_df = read.csv("final_sothebys.csv", header=TRUE, na.strings=c("", NA))
 ```
 
 ### Column Definitions:
 
 ```{r}
 #Dropping features with no interest (non-informative) in the analysis
-drop <- c("X", "Unnamed..0", "provenance", "auction_house_id", "external_image_url", "literature", "end_date")
+drop <- c("X", "Unnamed..0", "provenance", "auc_desc", "auction_house_id", "external_image_url", "literature", "end_date")
 art_df <- art_df[, !(names(art_df) %in% drop)]
 
-# Note that "provenance", "auction_house_id", "external_image_url", "literature" and "end_date" were dropped
+# Note that "provenance", "auc_desc", "auction_house_id", "external_image_url", "literature" and "end_date" were dropped
 names(art_df)
 ```
 
@@ -120,13 +119,14 @@ auc_year: the year of the auction (YYYY format).  <br/>
 auc_month: the month of the auction (as integers 1-12).  <br/>
 auc_season: the season of the auction (as integers 1-4).  <br/>
 auc_date: the date of the auction.  <br/>
-auc_order: the order in the auction by quantiles (as integers 1-10).  <br/>
+auth_era: groupe the birth year of authors into 10-year perios <br/>
+nth_in_auction: the order in the auction by quantiles (as integers 1-100).  <br/>
 percent_in_auction: the percentage through an auction that a lot was shown (nth_in_auction divided by number_of_lots).  <br/>
 hammer_price_bp_usd: hammer_price_bp converted to usd.  <br/>
 estimate_high_usd: estimate_high converted to usd. <br/> 
 estimate_low_usd: estimate_low converted to usd.  <br/>
 estimate_avg_usd: estimate_avg converted to usd.  <br/>
-price_range: factor of bucketed hammer price ranges in usd.  <br/>
+hammer_price_bp_usd_range: factor of bucketed hammer price ranges in usd.  <br/>
 
 ```{r}
 # data types
@@ -138,19 +138,21 @@ sapply(art_df, class)
 
 In this part of the project, we will be exploring the quality of the data provided for the auction data. Before analyzing the overall quality, a simple preprocessing has been conducted in Python that included the following steps:
 
-1. Added columns for normalized date (whole), year, month, and season.
-2. 'Start Date' and 'End Date' are always the same within the dataset. Therefore, we decided to only user 'Start Date' for the time when the auction occured.
-3. The "Title" column accepted a varity of title across different languages. We added a new column to show whether the piece is "untitles" while checking for the top 5 most common languages used: Italian, Dutch, English, French, Spanish, German.
-4. Created a new column that would break the order of the auction into 10 tiles and group all pieces into those tiles by auction id
+1. Since 'Start Date' and 'End Date' are always the same within the dataset, we decided to only use 'Start Date' for the time when the auction occured. Converted the column to DateTime type.
+2. Based on 'Start Date' column, we added columns for normalized year, month, and season.
+3. The "Title" column accepted a varity of title across different languages. We added a new column to indicate whether the piece is "untitled" while checking for the top 5 most common languages used: Italian, Dutch, English, French, Spanish, German.
+4. Created a new column 'nth_in_auction' that would break the order of the auction into 100 tiles and a column 'percent_in_auction' to show the percentage of the order within a specific auction.
 5. Added 'Average Estimate' column to reflect the aevrage price estimation between the high and the low
-6. Converted all currency to USD to be able to compare pieces sold across different locations. We matched the exchange rate at the time of the sell to properly convert all transactions.
+6. Added column 'auth_era' to group author's birth year for every 10 years.
+7. Converted all currency to USD to be able to compare pieces sold across different locations. We matched the exchange rate at the time of the sell to properly convert all transactions.
+8. Added 'hammer_price_bp_usd_range' that allocates the hammer prices into 4 ranges.
 
 A complete logic with code can be found here: https://github.com/serenazzz/art-auction-visualizatoin-project/blob/master/Preprocessing_final.ipynb
 
 
 ## Data Quality Exploration
 
-Let us start by looking at all the missing values and if there are any general patterns. Since we are dealing with a large amount of rows, we will reduce repeated patters to one row using the visna function. 
+Let us start by looking at all the missing values and if there are any general patterns. Since we are dealing with a large amount of rows, we will reduce repeated patterns to one row using the visna function. 
 
 ```{r fig.height=3.5}
 #install.packages("extracat")
@@ -160,7 +162,7 @@ visna(art_df, sort= "b")
 
 Looking at the output above, we can conclude that the overall state of the dataset is relatively good. The second most common pattern has no missing values while the two most "problematic" features appear to be death_year and birth_year.
 
-One important observation we will need to be careful about during further analysis is a relatively significant amount of missing values under hammer_price_bp feature. We have explored qualitative reasons behind the missing values in that category with the provider of the data. After careful observation, we found out that the missing values are actually driven by two locations that migt have less strict regulations around data governance (Doha). This observation is outlined in the graph below.
+One important observation we will need to be careful about during further analysis is a relatively significant amount of missing values under hammer_price_bp feature. We have explored qualitative reasons behind the missing values in that category with the provider of the data. After careful observation, we found out that the missing values are actually driven by two location that might have less strict regulations around data governance (Doha, Hong Kong). This observation is outlined in the graph below.
 
 
 ```{r}
@@ -172,7 +174,8 @@ ggplot(art_location, aes(x = location, y = attribute, fill = missing)) +
   ggtitle("Missing Values by Location") +
   xlab("Location") + ylab("Feature Name") +
   scale_fill_viridis(discrete=TRUE) +
-  theme_bw()
+  theme_bw()+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 This map allows us to see that some features' missing values like hammer_price_bp, condition, and auc_desc are actually only missing in certain location (typically in pairs of two). Therefore, we can speculate that this data is MAR (missing at random) depending on a location feature.
 
@@ -189,16 +192,14 @@ percent_missing
 
 This leads to a logical question. Are there any other variables that could explain the missing data? Therefore, we also looked at simular graphs while grouping by year and month.
 
-```{r fig.height = 10}
-#install.packages("viridis")
-#library(viridis)
+```{r fig.width=7 }
 art_year <- art_df %>% gather(attribute, value, -auc_year) %>% mutate(missing = ifelse(is.na(value), "yes", "no"))
 year <- ggplot(art_year, aes(x = factor(auc_year), y = attribute, fill = missing)) +
   geom_tile(color = "white") + 
   ggtitle("Missing Values by Year") +
   xlab("year") + ylab("Feature Name") +
   scale_fill_viridis(discrete=TRUE) +
-  theme_bw()
+  theme_bw()+theme(axis.text.x = element_text(angle = 45, hjust = 1))
 art_month <- art_df %>% gather(attribute, value, -auc_month) %>% mutate(missing = ifelse(is.na(value), "yes", "no"))
 month <-ggplot(art_month, aes(x = factor(auc_month), y = attribute, fill =       
                                 missing)) +
@@ -206,8 +207,8 @@ month <-ggplot(art_month, aes(x = factor(auc_month), y = attribute, fill =
   ggtitle("Missing Values by Month") +
   xlab("Month") + ylab("Feature Name") +
   scale_fill_viridis(discrete=TRUE) +
-  theme_bw()
-grid.arrange(year, month)
+  theme_bw()+theme(axis.text.x = element_text(angle = 45, hjust = 1))
+grid.arrange(year, month, nrow=1)
 ```
 
 While month looks more or less equally distributed, there is an interesting pattern forming in the year view. It comes as no surprise that older years (2006-2009) would carry all of the missing values for features around description and condition. There also looks to be certain years (more like 3 year periods) with perfectly clean data: 2010-2012 and 2015-2017. 
@@ -251,7 +252,9 @@ percent <- percent_missing[4]
 average <- art_average[2]
 auction_id <- percent_missing[1]
 corr <- data.frame(auction_id=auction_id, percent=percent, average = average)
-ggplot(corr, aes(average, percent)) + geom_point(col="blue") +ggtitle("Auction Average Hammer Price vs Percentage of Missing Values") 
+ggplot(corr, aes(average, percent)) + geom_point(col="blue") +ggtitle("Auction Average Hammer Price vs Percentage of Missing Values") +
+  scale_x_log10( breaks = scales::trans_breaks("log10", function(x) 10^x),
+   labels = scales::trans_format("log10", scales::math_format(10^.x)))
 ```
 
 There does not seem to be very strong correlation between the two variables.Just a subtle suggestion that auctions with smaller average price tend to have more NAs. Therefore, we will only consider location as the main determinant for missing values around hammer_price_bp. 
@@ -262,24 +265,16 @@ Before we move on, let us quickly follow up on the action items from the data qu
 2. take a note to exclude Doha and Hong Kong fro hammer_price_bp analysis
 
 ```{r}
-art_final <- art_df %>% filter(!is.na(estimate_low))
+# construct final dataset based on the quality analysis
+art_final <- art_df %>% filter(!is.na(estimate_low)) %>%
+            drop_na(hammer_price_bp_usd) %>%
+          filter(location %in%  c("NEW YORK", "LONDON", "PARIS", "MILAN","DUBAI","AMSTERDAM"))
 ```
 
 # Main Analysis (Exploratory Data Analysis)
-```{r}
-# dropping rows that have NAs in the hammer price column, which indicates that the lots are not sold
-# drop the rows that are from doha, as indicated in the data quality analysis
-df1 <- art_df %>% drop_na(hammer_price_bp_usd) 
-df2 <- df1 %>%
-  filter(abs(df1$hammer_price_bp_usd - 
-               median(df1$hammer_price_bp_usd)) <=3*sd(df1$hammer_price_bp_usd)) %>%
-  filter(location %in%  c("HONG KONG", "NEW YORK", "LONDON", "PARIS", "MILAN","DUBAI","AMSTERDAM"))
-```
-## Auction Information
-
 Our research can be divided into three sections:
-General questions about the data, understanding fluctuations in lot prices and deriving general conclusion. 
-
+General questions about the auction information, understanding fluctuations in lot prices and deriving general conclusion. 
+## General Auction Information
 We started by asking many questions about possible relationships between variables. The first set of plots will explore the correlation between number of lots sold and year, location and season. We were hoping to notice meaningful trends that can be further explored in subsequent sections. Since we had only a few locations, seasons and years we chose a barchart and excluded duplicate rows by the 'number of lots' column.
 
 ```{r fig.height = 4, fig.width = 8}
@@ -371,20 +366,22 @@ We created a histogram with a density curve to visualize the distribution of Ham
 ```{r}
 ##Hammer Price
 ggplot(art_final, aes(x= hammer_price_bp_usd)) + geom_histogram(aes(y=..density..))  + geom_density() + xlim(0,1500000) + theme_minimal()
-
 ```
 
+Distribution of Hammer Price is skewed to the right and has a long tail. We believe the reason for this is variability in art geners (Contemporary vs Renaissance for example) sold on the market. Some older masterpieces can be traded at prices that are completly out of range for contemporary artists. 
+Constracting valuable models in the next parts of our research fully depend on the ability to manipulate hammer price in the right way. We decided to remove the outliers.
 ```{r}
-#df2 <- art_final %>%
-#  filter(abs(art_final$hammer_price_bp_usd - 
-#               median(art_final$hammer_price_bp_usd)) <=3*sd(art_final$hammer_price_bp_usd))
+art_final <-art_final%>%
+          filter(abs(art_final$hammer_price_bp_usd - 
+               median(art_final$hammer_price_bp_usd)) <=3*sd(art_final$hammer_price_bp_usd))
+```
+```{r}
 
 #ggplot(df2, aes(x= hammer_price_bp_usd)) + geom_histogram(aes(y=..density..))  + geom_density() + xlim(0,1500000)+ theme_minimal()
 
 ```
-Distribution of Hammer Price is skewed to the right and has a long tail. We believe the reason for this is variability in art geners (Contemporary vs Renaissance for example) sold on the market. Some older masterpieces can be traded at prices that are completly out of range for contemporary artists. 
 
-Constracting valuable models in the next parts of our research fully depend on the ability to manipulate hammer price in the right way. We decided to remove a few data points from the tail by considering them as outliers. 
+
 ```{r fig.height = 4, fig.width = 8}
 
 ##revenue by location
@@ -453,15 +450,18 @@ parcoords(MyDatas,
 ## Do Certain Lot Attributes Result in Higher Price?
 ### Lot Titles
 #### What lots have higher price? 
+To begin the anlaysis, we want to see the titles of expensive lots and plot their size with respect to the prices
 ```{r}
+df1 <- art_final
 df_wordcloud <- df1[,c("lot_title","hammer_price_bp_usd")]
-df_wordcloud <- arrange(df_wordcloud,desc(df_wordcloud$hammer_price_bp_usd))[1:500,]
+df_wordcloud <- arrange(df_wordcloud,desc(df_wordcloud$hammer_price_bp_usd))[1:1000,]
 library(wordcloud)
 library(tm)
 pal <- brewer.pal(9, "OrRd")
 pal <- pal[-(1:3)]
-wordcloud(df_wordcloud$lot_title, df_wordcloud$hammer_price_bp_usd, min.freq=500, scale=c(5, .5), random.order = FALSE, random.color = FALSE, colors= pal)
+wordcloud(df_wordcloud$lot_title, min.freq = 10,df_wordcloud$hammer_price_bp_usd, scale=c(5, .5), random.order = FALSE, random.color = FALSE, colors= pal)
 ```
+A lot of expensive lots appear to have "untitled" in their title. To get a better idea of what words artists tend to name their pieces, we count the frequency of each word appear in all titles and see which words do artists tend to use in the titles.
 #### What words appear more often in the lot titles?
 ```{r}
 # collapse the lot_title column by word and count the frequency they appear in the titles.
@@ -479,6 +479,7 @@ word_count <- arrange(word_count,desc(word_count$Freq))[1:300,]
 pal <- brewer.pal(9, "Dark2")
 wordcloud(word_count$temp, word_count$Freq, min.freq =20, scale=c(5, .5), random.order = FALSE, random.color = FALSE, colors= pal)
 ```
+Without surprise, "untitled" indeed are the most popular word artists tend to use. In that case, are "untitled" works more likely to receive higher prices?
 #### Looking at lots that have name "Untitled", what price ranges are they in? Is it correlated?
 ```{r}
 library(vcd)
@@ -491,7 +492,9 @@ vcd::mosaic(hammer_price_bp_usd_range~is_untitled, direction = c("v", "h"),df1,
        gp = gpar(fill = c("lightyellow", "lightpink")),
                  labeling = labeling_border(rot_labels = c(0, 45),pos_labels="center"))
 ```
-#### Are they mostly contemprary? 
+In the above plot, "1" indicates the lot has "untitled" in it and "0" other wise. Anlayzing the mosaic plot above, we can see that "untitled" actually result in a relatively lower price as less "untitled" lots are in the range "$500,000+" while more "untitled" lots are in the lowest range. If the higher prices can not explain the common use of "untitled", what can?
+We guess that contemprary artists tend to name their arts "untitled". To explroe this, we put together the auction titles where "untitled" works are presente the most and labeled them with art type. 
+#### Are "untitled" work mostly contemprary? 
 ```{r, fig.width=5}
 untitle_ratio = read.csv("untitle_ratio.csv", header=TRUE)
 #tempstr <-  strtrim(untitle_ratio$auc_title, 20)
@@ -499,26 +502,29 @@ untitle_ratio = read.csv("untitle_ratio.csv", header=TRUE)
 untitle_ratio$is_contemporary = as.factor(untitle_ratio$is_contemporary)
 ggplot(data=untitle_ratio, aes(x=reorder(auc_title,ratio), y=ratio,fill=is_contemporary))+geom_bar(stat="identity")+coord_flip()
 ```
-```
+Of the top 20 auctions that have highest "untitled" ratio, we see that contemporary auction is just slighly more than non-contemporary auction. In fact, by looking at auction names of non-contemporary auctions, we realize that smaller pieces of art (such as decoration, furnitures) tend to have "untitled" in their title as well! Perhaps those contribute mostly to the fact that "untitled" work have relatively lower price.
 ### Does the era of the lot affect its price?
-```{r}
-df3 <- df2 %>% 
-  filter(df2$birth_year>1800)
+Here, we will plot the hammer price against artists' birth years. Note that we are using log scales on the y-axis as the range of prices is wide.
+```{r }
+df3 <- df1 %>% 
+  filter(df1$birth_year>1700)
 ggplot(df3, aes(birth_year,hammer_price_bp_usd))  + 
-  geom_smooth(method='lm',formula=y ~ poly(x, 2))+
+  geom_smooth(method='lm',formula=y ~ poly(x, 3))+
   geom_point(alpha = .1)  + 
   theme_grey(10)+scale_y_log10()+  geom_density_2d(bins = 5)
 ```
+From the above chart, we can see that modern pieces have larger variance. We'd like to try a boxplot to capture this feature.
 ```{r}
 #box plot price vs year
-#ggplot(df3, aes(x=auth_era), y=hammer_price_bp_usd)+ stat_summary(fun.y="mean", geom="line", aes(group=1))
 ggplot(df3, aes(auth_era, hammer_price_bp_usd)) +
   geom_boxplot()+theme(axis.text.x = element_text(angle = 90, hjust = 1))+scale_y_log10()
 ```
+We notice that for certain era (e.g. 1750), there are no pieces sold. There are also more outliers for authors born 1900 - 1980. However, due to the coplex change in average price over every 10 years, this box plot looks messy overall. Therefore, we decide to only include the scattor plot as that contains the information more straightforward.
 ## Do Certain Extrernal Factors Result in Higher Price?
 ###Does the Order Matter?
+In general, there are a lot of lots in each auction. In our dataset, the average lot numbers per auction is 357. With the large amount of lots being auctioned, we assume that the most valuable pieces get presented early in the auction. To validate this idea, we normalized the order of lots presented in each auction and plot it against the hammer price.
 ```{r}
-ggplot(df2, aes(percent_in_auction,hammer_price_bp_usd))  + 
+ggplot(df1, aes(percent_in_auction,hammer_price_bp_usd))  + 
   geom_smooth(method='lm',formula=y~x,color="red")+
   geom_point(alpha = .05)  + 
   theme_grey(10)+scale_y_log10()+
@@ -558,12 +564,65 @@ We notice a consistent drop in revenue across all locations above starting 2010.
 
 ###Does Season Matter?
 ```{r}
+df1 <- df1 %>% 
+  dplyr::mutate(auc_season = forcats::fct_relevel(auc_season, "summer")) %>%
+  dplyr::mutate(auc_season = forcats::fct_relevel(auc_season, "fall")) %>%
+  dplyr::mutate(auc_season = forcats::fct_relevel(auc_season, "winter"))
 vcd::mosaic(hammer_price_bp_usd_range~auc_season, direction = c("v", "h"),df1,
-       gp = gpar(fill = c("lightyellow", "lightpink")),
+       gp = gpar(fill = c("yellow", "purple")),
                  labeling = labeling_border(rot_labels = c(0, 90),pos_labels="center"))
 ```
+The labels of hammer price range did not turn out as neat in the begeinning, however, after changing the order of the seasons, we obtained the above graph indicating the clear correlations between seasons and the lot prices. Specifically, there are more lots sold in spring and fall and lots are sold relatively higher in the fall.
 ###Does Location Matter?
+```{r}
+# Elizabet bar plot
+```
 # Executive Summary
+INSERT OPENNING
+Next, we will present our most imporatn findings alongside with graphs.
+## 1. Art pieces created in the 20th centry on average are sold at higher price.
+There are more lots sold where their authors are born in the 20th centry, specifically in 1900s,1930s and 1960s. For simplicity, we call them "modern" pieces and call the lots whose authors were born before 1900 "older" pieces. From the graph, we can see that modern pieces have higher prices on average while having larger variance too. One plausible explanation is that the price range and values for contemporary art are more likely to uneven due to the nature of the contemporary art.
+```{r}
+df3 <- df2 %>% 
+  filter(df2$birth_year>1700)
+ggplot(df3, aes(birth_year,hammer_price_bp_usd))  + 
+  geom_smooth(method='lm',formula=y ~ poly(x, 3),color="orange")+
+  geom_point(alpha = .1)  + 
+  theme_bw()+scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x),
+   labels = scales::trans_format("log10", scales::math_format(10^.x)))+geom_density_2d(bins = 5, color="orange")+
+    scale_x_continuous(breaks = seq(min(df3$birth_year), max(df3$birth_year),10))+
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+  xlab("author birth year")+
+  ylab("Hammer Price")+
+  ggtitle("Lot Hammer Price vs Author Birth Year")
+```
+
+## 2. The earlier the lots get presented in an auction, the higher price they have.
+Due to large number of lots presented in Sotheby's auctions, the most valuable pieces get presented early on in the auction.From the below graph, we conclude that there is a negative relationship between art prices and order presented for all locations besides Dubai. Particularly Paris has the most obvious negarive relationship.
+```{r}
+ggplot(df3, aes(percent_in_auction,hammer_price_bp_usd))  + 
+  geom_smooth(method='lm',formula=y~x,color="orange")+
+  geom_point(alpha = .05)  + 
+  theme_grey(10)+scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x),
+   labels = scales::trans_format("log10", scales::math_format(10^.x)))+
+  facet_wrap(~location)+
+  theme_bw()+
+  xlab("Lot Order in Auction")+
+  ylab("Hammer Price")+
+  ggtitle("Lot Hammer Price vs Lot Order in Auction")
+```
+## 3. Lot prices are closely related the season.
+Most of the auctions appear in March and November, thus in the graph we see fall and spring have more lots being sold. Aside from the quantity, the price of the lots are closely related to season as well. We conclude that winter has a positive correlation for lots to be sold in the highest range ($500,000+) as well as the lowest range (<$10,000). Lots sold in Fall, however, appear more likely to fall in the higher price ranges. Lots sold in spring are relatively cheaper compared to lots sold in other seasons.
+```{r}
+df1$Hammer_Price_Range <- df1$hammer_price_bp_usd_range
+df1$Auction_Season <- df1$auc_season
+vcd::mosaic(Hammer_Price_Range~Auction_Season, direction = c("v", "h"),df1,
+       gp = gpar(fill = c("yellow", "purple")),
+                 labeling = labeling_border(rot_labels = c(0, 90),pos_labels="center"))
+```
+
+## 4. Conclusion about location
+## 5. Conclusiion about financial crisis
 
 # Interactive Componenet
 
@@ -577,6 +636,6 @@ This view allows users to see all of the lots sold by their price and timeframe.
 
 There are quite a few great aspect of this chart that could be very helpful for the user:
 
-1. **Change Year** - Click on the arrows next to the year to either move a year forward or backwards. This can help to compare the different distributions across all years in our dataset.
-2. **See Lot Details** - Hoover over each circle to see the details of the lot transaction. You should expect to see a window that is showing the hammer price as well as the picture of the lot. Keep in mind that a lot of the lots have their pictures protected by the copyright (so they will not show). Nonetheless, some of the later ones typicaally do:)
-2.  **Spread Data Points ** - to better see each data point for the details use the button on the top right that says: "Spread Data Points." This would jitter the points from their original location to better see all options. One can easily bring the points back to proper location by unclicking the button.
+1. **Change Year** - Click on the arrows next to the year to either move a year forward or backwards. This can help to compare the different distributions and average price of lots across all years in our dataset.
+2. **See Lot Details** - Hover over each circle to see the details of the lot transaction. You should expect to see a window that is showing the hammer price as well as the picture of the lot. Keep in mind that a lot of the lots have their pictures protected by the copyright (so they will not show). Nonetheless, some of the later ones typicaally do:)
+2.  **Spread Data Points ** - to better see each data point for the details, use the button on the top right that says: "Jitter" This would jitter the points from their original location to better see all options. One can easily bring the points back to proper location by unclicking the button.
