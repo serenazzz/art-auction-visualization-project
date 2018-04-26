@@ -155,7 +155,7 @@ One important observation we will need to be careful about during further analys
 
 
 ```{r}
-#install.packages("viridis")
+install.packages("viridis")
 library(viridis)
 art_location <- art_df %>% gather(attribute, value, -location) %>% mutate(missing = ifelse(is.na(value), "yes", "no"))
 ggplot(art_location, aes(x = location, y = attribute, fill = missing)) +
@@ -182,7 +182,7 @@ percent_missing
 
 This leads to a logical question. Are there any other variables that could explain the missing data? Therefore, we also looked at similar graphs while grouping by year and month.
 
-```{r fig.width=7 }
+```{r  }
 art_year <- art_df %>% gather(attribute, value, -auc_year) %>% mutate(missing = ifelse(is.na(value), "yes", "no"))
 year <- ggplot(art_year, aes(x = factor(auc_year), y = attribute, fill = missing)) +
   geom_tile(color = "white") + 
@@ -324,6 +324,7 @@ art_group <- art_info %>% group_by(auc_season)%>% count(auction_id) %>% summaris
 ggplot(art_group, aes(x= auc_season, y = B)) + 
     geom_bar( stat='identity', color="royalblue", fill="grey")  +labs(x = "Auction season")+labs(y = "Number of auctions") + ggtitle("Number of auctions by season") + theme_minimal() + theme(plot.title = element_text(hjust = 0.5,face="bold"))  
 ```
+
  Plotting the number of auctions based on location, season and year turned out to have similar results to the previous section and confirmed ideas suggested above. Namely, fall and spring are the two main auction seasons. London, New York and Paris are the main locations for art trading. And after 2009 the number of auctions conducted yearly around the world increased significantly. 
  
  
@@ -586,9 +587,21 @@ The labels of hammer price range did not turn out as neat in the beginning, howe
 
 ###Does Location Matter?
 
-```{r}
-# Elizabet bar plot
+To explore which locations have higher average price we created a bar chart. 
+
+```{r fig.height=4, fig.width=7}
+
+MyData_2a <- subset(art_final, select=c( "location", "hammer_price_bp_usd" ))
+
+
+MyData_2b <- MyData_2a %>% group_by(location)%>% summarise(B=mean(hammer_price_bp_usd)) 
+
+ggplot(MyData_2b, aes(x= location, y = B)) + 
+    geom_bar(stat='identity', color="blue", fill="grey")+labs(y = "Average price")+labs(x = "Location") + ggtitle("Average price by location") + theme_minimal()  + theme(plot.title = element_text(hjust = 0.5,face="bold"))
+
 ```
+
+From the graph it can be seen that Milan, London and New York have the highest average lot price. Which confirms our assumption from part 1 that New York ansd London are the main hubs for art exchange. 
 
 # Executive Summary
 
@@ -643,7 +656,6 @@ vcd::mosaic(Hammer_Price_Range~Auction_Season, direction = c("v", "h"),df1,
                  labeling = labeling_border(rot_labels = c(0, 90),pos_labels="center"))
 ```
 
-## 4. Conclusion about location
 
 ## 5. Financial Crisis had a negative effect on average price across almost all locations around the world
 
