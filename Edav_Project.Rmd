@@ -274,13 +274,16 @@ art_info <- subset(art_final, select=c( "location", "number_of_lots" ))
 art_info <- art_info[!duplicated(art_info$number_of_lots),]
 art_group <- art_info %>% group_by(location)%>% summarise(B=sum(number_of_lots)) 
 p1 <- ggplot(art_group, aes(x= location, y = B)) + 
-    geom_bar( stat='identity', color="royalblue", fill="grey")  +labs(x = "Location")+labs(y = "Total number of lots") + ggtitle("Number of lots sold by location") + theme(plot.title = element_text(hjust = 0.5,face="bold")) + theme_minimal() 
+    geom_bar( stat='identity', color="royalblue", fill="grey")  +labs(x = "Location")+labs(y = "Total number of lots") + ggtitle("Number of lots sold by location")  + theme_minimal() + theme(plot.title = element_text(hjust = 0.5,face="bold"))
+
 art_info2 <- subset(art_final, select=c( "auc_year", "number_of_lots" ))
 art_info2 <- art_info2[!duplicated(art_info2$number_of_lots),]
 art_info2 <- art_info2 %>% group_by(auc_year)%>% summarise(B=sum(number_of_lots)) 
 p2 <- ggplot(art_info2, aes(x= auc_year, y = B)) + 
-    geom_bar( stat='identity', color="royalblue", fill="grey")  +labs(x = "Auction year")+labs(y = "Total number of lots") + ggtitle("Number of lots sold by year") + theme(plot.title = element_text(hjust = 0.5,face="bold")) + theme_minimal()+ scale_x_continuous(breaks= c(2006, 2010, 2014, 2017)) 
+    geom_bar( stat='identity', color="royalblue", fill="grey")  +labs(x = "Auction year")+labs(y = "Total number of lots") + ggtitle("Number of lots sold by year")  + theme_minimal()+ theme(plot.title = element_text(hjust = 0.5,face="bold"))+ scale_x_continuous(breaks= c(2006, 2010, 2014, 2017))
+
 grid.arrange(p1, p2, nrow = 1)
+
 ```
 
 ```{r}
@@ -289,12 +292,12 @@ art_info <- subset(art_final, select=c( "auc_season", "number_of_lots" ))
 art_info <- art_info[!duplicated(art_info$number_of_lots),]
 art_group <- art_info %>% group_by(auc_season)%>% summarise(B=sum(number_of_lots)) 
 ggplot(art_group, aes(x= auc_season, y = B)) + 
-    geom_bar( stat='identity', color="royalblue", fill="grey")  +labs(x = "Auction season")+labs(y = "Total number of lots") + ggtitle("Number of lots sold by season") + theme(plot.title = element_text(hjust = 0.5,face="bold"))  + theme_minimal()
+    geom_bar( stat='identity', color="royalblue", fill="grey")  +labs(x = "Auction season")+labs(y = "Total number of lots") + ggtitle("Number of lots sold by season") + theme_minimal() + theme(plot.title = element_text(hjust = 0.5,face="bold"))  
 ```
 
-Graphs above suggest that fall and spring are the most popular seasons to acquire a masterpiece. At the same time, there was a significant increase in number of lots sold since 2010, suggesting that investors started to see the art market as a form of long-term non-liquid investment after the financial crisis of 2008 (we will explore this concept in more detail later in the analysis). The main hubs for art exchanges formed in London, New York and Paris.
+Graphs above suggest that fall and spring are the most popular seasons to acquire a masterpiece. At the same time, there was a significant increase in number of lots sold since 2010, suggesting that investors started to see the art market as a form of long-term non-liquid investment after the financial crisis of 2008 (we will explore this hypothesis in more detail later in the analysis). The main hubs for art exchanges formed in London, New York and Paris.
 
-Plotting the number of auctions based on location, season and year turned out to have similar results and confirmed ideas suggested above.
+The next set of graphs will focus on the number of actions by year, locaion and season.
 
 ```{r fig.height =4, fig.width = 8}
 ##Auctions by location, year, season
@@ -302,14 +305,14 @@ art_info <- subset(art_final, select=c( "auction_id", "location" ))
 art_info <- art_info[!duplicated(art_info$auction_id),]
 art_group <- art_info %>% group_by(location)%>% count(auction_id) %>% summarise(B=sum(n)) 
 p1<-ggplot(art_group, aes(x= location, y = B)) + 
-    geom_bar( stat='identity', color="royalblue", fill="grey")  +labs(x = "Auction location")+labs(y = "Number of auctions") + ggtitle("Number of auctions by location") + theme(plot.title = element_text(hjust = 0.5,face="bold"))  + theme_minimal()
+    geom_bar( stat='identity', color="royalblue", fill="grey")  +labs(x = "Auction location")+labs(y = "Number of auctions") + ggtitle("Number of auctions by location") + theme_minimal()+ theme(plot.title = element_text(hjust = 0.5,face="bold"))  
 
 art_info2 <- subset(art_final, select=c( "auction_id", "auc_year" ))
 art_info2 <- art_info2[!duplicated(art_info2$auction_id),]
 art_info2 <- art_info2 %>% group_by(auc_year)%>% count(auction_id) %>% summarise(B=sum(n)) 
 
 p2<- ggplot(art_info2, aes(x= auc_year, y = B)) + 
-    geom_bar( stat='identity', color="royalblue", fill="grey")+labs(y = "Number of auctions")+labs(x = "Year") + ggtitle("Number of auctions by year") + theme(plot.title = element_text(hjust = 0.5,face="bold"))  + theme_minimal()
+    geom_bar( stat='identity', color="royalblue", fill="grey")+labs(y = "Number of auctions")+labs(x = "Year") + theme_minimal() + ggtitle("Number of auctions by year") + theme(plot.title = element_text(hjust = 0.5,face="bold"))  
 grid.arrange(p1, p2, nrow = 1)
 ```
 
@@ -319,17 +322,20 @@ art_info <- subset(art_final, select=c( "auction_id", "auc_season" ))
 art_info <- art_info[!duplicated(art_info$auction_id),]
 art_group <- art_info %>% group_by(auc_season)%>% count(auction_id) %>% summarise(B=sum(n)) 
 ggplot(art_group, aes(x= auc_season, y = B)) + 
-    geom_bar( stat='identity', color="royalblue", fill="grey")  +labs(x = "Auction season")+labs(y = "Number of auctions") + ggtitle("Number of auctions by season") + theme(plot.title = element_text(hjust = 0.5,face="bold"))  + theme_minimal()
+    geom_bar( stat='identity', color="royalblue", fill="grey")  +labs(x = "Auction season")+labs(y = "Number of auctions") + ggtitle("Number of auctions by season") + theme_minimal() + theme(plot.title = element_text(hjust = 0.5,face="bold"))  
 ```
-
-To see what are the different triggers of variability in art prices we decided to explore fluctuations in Hammer Prices. Therefore, we created a histogram with a density curve to visualize the distribution of Hammer Price.
+ Plotting the number of auctions based on location, season and year turned out to have similar results to the previous section and confirmed ideas suggested above. Namely, fall and spring are the two main auction seasons. London, New York and Paris are the main locations for art trading. And after 2009 the number of auctions conducted yearly around the world increased significantly. 
+ 
+ 
+To answer our second set of questions and see what are the different triggers of variability in art prices we decided to explore fluctuations in Hammer Prices. Therefore, we created a histogram with density curve to visualize the distribution of Hammer Price.
 
 ```{r}
 ##Hammer Price
-ggplot(art_final, aes(x= hammer_price_bp_usd)) + geom_histogram(aes(y=..density..))  + geom_density(col="red") + xlim(0,1500000) + theme_minimal() +xlab("Price") +ylab("Density") +ggtitle("Hammer Price Distribution")
+ggplot(art_final, aes(x= hammer_price_bp_usd)) + geom_histogram(aes(y=..density..))  + geom_density(col="red") + xlim(0,1500000) + theme_minimal() +xlab("Price") +ylab("Density") +ggtitle("Hammer Price Distribution")+ theme(plot.title = element_text(hjust = 0.5,face="bold"))
+
 ```
 
-Distribution of Hammer Price is skewed to the right and has a long tail. We believe the reason for this is variability in art geners (Contemporary vs Renaissance for example) sold on the market. Some older masterpieces can be traded at prices that are completly out of range for contemporary artists. 
+Distribution of Hammer Price is skewed to the right and has a long tail. We believe the reason for this is various price ranges for different groups of lots sold on the market. Variability in price can be explained by difference in art geners (Contemporary vs Renaissance for example), quality, age and popularity of the artwork. These factors can distinguish a masterpiece sold for $135 million like "Portrait of Adele Bloch-Bauer" by Gustav Klimt and Untitled paitning by Mark Rothko sold for only 6.5 million. 
 
 Constracting valuable models in the next parts of our research fully depend on the ability to manipulate hammer price in the right way. We decided to remove the outliers.
 
@@ -337,23 +343,24 @@ Constracting valuable models in the next parts of our research fully depend on t
 art_final <-art_final%>%
           filter(abs(art_final$hammer_price_bp_usd - 
                median(art_final$hammer_price_bp_usd)) <=3*sd(art_final$hammer_price_bp_usd))
-```
-```{r}
-#ggplot(df3, aes(x= hammer_price_bp_usd)) + geom_histogram(aes(y=..density..))  + geom_density() + xlim(0,1500000)+ theme_minimal()
 
+ggplot(art_final, aes(x= hammer_price_bp_usd)) + geom_histogram(aes(y=..density..))  + geom_density(col="green") + xlim(0,1500000)+ theme_minimal() +xlab("Price") +ylab("Density") +ggtitle("Hammer Price Distribution (New)")+ theme(plot.title = element_text(hjust = 0.5,face="bold"))
 ```
+
+Adjusted hammer price brought our attention to distribution of revenue over time and location. For both plots we chose a bar chart. 
 
 ```{r fig.height = 4, fig.width = 8}
 
 ##revenue by location
 
-#MyData <- subset(art_final, select=c( "location", "auction_id", "hammer_price_bp_usd" ))
+MyData <- subset(art_final, select=c( "location", "auction_id", "hammer_price_bp_usd" ))
 
 
-MyData5 <- art_final %>% group_by(location)%>% summarise(B=sum(hammer_price_bp_usd)) 
+MyData5 <- MyData %>% group_by(location)%>% summarise(B=sum(hammer_price_bp_usd)) 
+
 
 p1 <- ggplot(MyData5, aes(x= location, y = B)) + 
-    geom_bar( stat='identity', color="yellow", fill="grey")+labs(y = "Auction Revenue")+labs(x = "Location") + ggtitle("Auction revenue by location") + theme(plot.title = element_text(hjust = 0.5,face="bold")) + theme_minimal()
+    geom_bar( stat='identity', color="yellow", fill="grey")+labs(y = "Auction Revenue")+labs(x = "Location") + ggtitle("Auction revenue by location") + theme_minimal() + theme(plot.title = element_text(hjust = 0.5,face="bold"))
 
 ##revenue by year
 
@@ -362,13 +369,19 @@ MyData_1 <- subset(art_final, select=c( "auc_year", "auction_id", "hammer_price_
 MyData_1 <- MyData_1 %>% group_by(auc_year)%>% summarise(B=sum(hammer_price_bp_usd)) 
 
 p2<-ggplot(MyData_1, aes(x= auc_year, y = B)) + 
-    geom_bar(stat='identity', color="green", fill="grey")+labs(y = "Auction Revenue")+labs(x = "Year") + ggtitle("Auction revenue by year") + theme(plot.title = element_text(hjust = 0.5,face="bold")) + theme_minimal()
+    geom_bar(stat='identity', color="green", fill="grey")+labs(y = "Auction Revenue")+labs(x = "Year") + ggtitle("Auction revenue by year") + theme_minimal()  + theme(plot.title = element_text(hjust = 0.5,face="bold"))
 
 grid.arrange(p1, p2, nrow = 1)
 
 ```
-Adjusted hammer price brought our attention to distribution of revenue over time and location. For both plots we chose a bar chart. In general, auction revenues are going up, with highest revenues in a decade being in 2017. London and New York continue to lead the way as the main centers for the exchange of art.
-```{r}
+
+After the financial crisis world art revenues went up following the assumption that people saw art as a form of investment. In 2013 revenues declined again possibly due to a slow down in the art market and went back up in the following years. London and New York continue to lead the way as the main centers for the exchange of art.
+
+Another question that we thought would help us explore the data - Variability of lots across auctions?
+
+In the data we had 89 auctions varying in theme, concept and length. We were partcilarly interested in the genrs of the auctions that had the biggest number of lots. We created a clevelend dot plot and filtered by auctions that had more than 200 lots.  
+
+```{r fig.height = 4, fig.width = 6}
 
 ##Clevelend dot plot
 MyData2 <-  strtrim(art_final$auc_title, 40)
@@ -382,9 +395,13 @@ MyData3$auc_title <- factor(MyData3$auc_title, levels = MyData3$auc_title[order(
 
 MyData3<-  MyData3[which(MyData3$number_of_lots>200),]
 
-ggplot(MyData3, aes( x = auc_title, y = number_of_lots)) + geom_point(stat="identity",  color="red") + coord_flip()+ theme_minimal()
+ggplot(MyData3, aes( x = auc_title, y = number_of_lots)) + geom_point(stat="identity",  color="red") + coord_flip()+ theme_minimal() +labs(y = "Number of lots by auction")+labs(x = "Number of lots") + ggtitle("Auction title") + theme(plot.title = element_text(hjust = 0.5,face="bold"))
 
 ```
+
+Based on the graph we identified the theme of each auction and calculated shares of different themes. The result showed that 48% of the auctions with the highest number of lots are Contemporary auctions. This results can be easily explained since modern artists create more and more content every year while for older masters artworks are main resold (nothing new is generated).
+
+To conclude exploration of data we created a parallel coordinate plot for auction year, birth year of the artist, lot number in the auction, and hammer price colored by location.
 
 ```{r fig.height = 4, fig.width = 8}
 
@@ -396,14 +413,14 @@ ggparcoord(MyDatas, columns = 1:(ncol(MyDatas)-1), scale = "uniminmax", groupCol
 
 ```
 
-```{r}
+```{r fig.height = 4, fig.width =10}
 #devtools::install_github("timelyportfolio/parcoords")
 library(parcoords)
 #library(httpuv)
 
 parcoords(MyDatas,
     rownames = F 
-    , brushMode = "1D-axes", color = list(
+    , brushMode = "1D-axes", alpha =0.5,color = list(
       colorBy = "location", colorScale = htmlwidgets::JS("d3.scale.category10()"))
     ) 
 ```
@@ -579,7 +596,7 @@ The explatory visualization part of the project allowed us to dive deep around o
 
 Next, we will present these findings with graphs in following summary:
 
-## 1. Art pieces created in the 20th centry on average are sold at higher price.
+## 1. Art pieces created in the 20th centry on average are sold at a higher price.
 
 There are more lots sold where their authors are born in the 20th century, specifically in 1900s,1930s and 1960s. For simplicity, we call them "modern" pieces and call the lots whose authors were born before 1900 "older" pieces. From the graph, we can see that modern pieces have higher prices on average while having larger variance too. One plausible explanation is that the price range and values for contemporary art are more likely to uneven due to the nature of the contemporary art.
 
