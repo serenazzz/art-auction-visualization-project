@@ -1,7 +1,7 @@
 ---
 title: "Art Project EDAV"
 author: "Alexandra Sudomoeva, Elizabet Doliar, Serena Zhang, Basil Vetas"
-date: "4/13/2018"
+date: "4/26/2018"
 output: html_document
 ---
 
@@ -19,13 +19,8 @@ library(ggplot2)
 library(gridExtra)
 library(grid)
 ```
-#todos:
 
-- rewrite preprocessing
-- log scale Alex's scatter plot 
-- variable names to be consistent
-- relev to # of lots bar plot - for correct order or season
-- paralell coord - hammer_price_bp_usd_range
+
 # Introduction
 
 ### Introduction
@@ -48,11 +43,11 @@ From a high level, the questions that intrigued us most were related to knowing 
 
 ### Team Members & Contributions
 
-Each team meber worked equally hard to bring this project to live. While having weekly progress meetings and brainstorming sessions, we have adopted a divide and concour approach around buildings graphs and the corresponding write-up. 
+Each team meber worked equally hard to bring this project to live. While having weekly progress meetings and brainstorming sessions, we have adopted a divide and concour approach around building graphs and the corresponding write-up. 
 
 Introduction as well as Data Description were written by *Basil Vetas*. As a full time employee of Arthena, Basil was also intrumential in helping us collect the dataset used in the project. In addition, Basil worked on the interactive component of the assignment.
 
-Data Quality analysis as well as some of the clean-up was performed by *Alexandra Sudomoeva*. Alexandra also built visualizations for the Financial crisis impact for the main analysis. Lastly, she assisted in writing the instructions for the interactive component. 
+Data Quality analysis as well as some of the clean-up was performed by *Alexandra Sudomoeva*. Alexandra also built visualizations for the Financial Crisis' impact in the main analysis. Lastly, she assisted in writing the instructions for the interactive component. 
 
 *Serena Zhang* worked on data preprocessing and the main analysis as well as the executive summary. Her analysis included auction price correlation with lot titles, artist's era, order in auction, season and location. 
 
@@ -76,9 +71,6 @@ art_df = read.csv("final_sothebys.csv", header=TRUE, na.strings=c("", NA))
 #Dropping features with no interest (non-informative) in the analysis
 drop <- c("X", "Unnamed..0", "provenance", "auc_desc", "auction_house_id", "external_image_url", "literature", "end_date")
 art_df <- art_df[, !(names(art_df) %in% drop)]
-
-# Note that "provenance", "auc_desc", "auction_house_id", "external_image_url", "literature" and "end_date" were dropped
-names(art_df)
 ```
 
 **Lot**  
@@ -128,21 +120,18 @@ estimate_low_usd: estimate_low converted to usd.  <br/>
 estimate_avg_usd: estimate_avg converted to usd.  <br/>
 hammer_price_bp_usd_range: factor of bucketed hammer price ranges in usd.  <br/>
 
-```{r}
-# data types
-sapply(art_df, class)
-```
+
 # Data Quality Analysis
 
 ## Preprocessing
 
 In this part of the project, we will be exploring the quality of the data provided for the auction data. Before analyzing the overall quality, a simple preprocessing has been conducted in Python that included the following steps:
 
-1. Since 'Start Date' and 'End Date' are always the same within the dataset, we decided to only use 'Start Date' for the time when the auction occured. Converted the column to DateTime type.
+1. Since 'Start Date' and 'End Date' are always the same within the dataset, we decided to only use 'Start Date' for the time when the auction occurred. Converted the column to DateTime type.
 2. Based on 'Start Date' column, we added columns for normalized year, month, and season.
 3. The "Title" column accepted a varity of title across different languages. We added a new column to indicate whether the piece is "untitled" while checking for the top 5 most common languages used: Italian, Dutch, English, French, Spanish, German.
 4. Created a new column 'nth_in_auction' that would break the order of the auction into 100 tiles and a column 'percent_in_auction' to show the percentage of the order within a specific auction.
-5. Added 'Average Estimate' column to reflect the aevrage price estimation between the high and the low
+5. Added 'Average Estimate' column to reflect the average price estimation between the high and the low
 6. Added column 'auth_era' to group author's birth year for every 10 years.
 7. Converted all currency to USD to be able to compare pieces sold across different locations. We matched the exchange rate at the time of the sell to properly convert all transactions.
 8. Added 'hammer_price_bp_usd_range' that allocates the hammer prices into 4 ranges.
@@ -162,7 +151,7 @@ visna(art_df, sort= "b")
 
 Looking at the output above, we can conclude that the overall state of the dataset is relatively good. The second most common pattern has no missing values while the two most "problematic" features appear to be death_year and birth_year.
 
-One important observation we will need to be careful about during further analysis is a relatively significant amount of missing values under hammer_price_bp feature. We have explored qualitative reasons behind the missing values in that category with the provider of the data. After careful observation, we found out that the missing values are actually driven by two location that might have less strict regulations around data governance (Doha, Hong Kong). This observation is outlined in the graph below.
+One important observation we will need to be careful about during further analysis is a relatively significant amount of missing values under hammer_price_bp feature. We have explored qualitative reasons behind the missing values in that category with the provider of the data. After careful observation, we found out that the missing values are actually driven by two locations that might have less strict regulations around data governance (Doha, Hong Kong). This observation is outlined in the graph below.
 
 
 ```{r}
@@ -177,9 +166,10 @@ ggplot(art_location, aes(x = location, y = attribute, fill = missing)) +
   theme_bw()+
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
-This map allows us to see that some features' missing values like hammer_price_bp, condition, and auc_desc are actually only missing in certain location (typically in pairs of two). Therefore, we can speculate that this data is MAR (missing at random) depending on a location feature.
 
-Indeed, when looking at the table below, the overall percentage of missing values across difeerent locations varies quite significantly. Hong Kong is the top location with most missing values (8% of total).
+This map allows us to see that some features' missing values like hammer_price_bp, condition, and birth year are actually only missing in certain location (typically in pairs of two). Therefore, we can speculate that this data is MAR (missing at random) depending on a location feature.
+
+Indeed, when looking at the table below, the overall percentage of missing values across different locations varies quite significantly. Amsterdam is the top location with most missing values (8% of total).
 
 ```{r}
 art_location <- art_df %>% gather(attribute, value, -location)
@@ -190,14 +180,14 @@ percent_missing <- art_location %>% group_by(location) %>%
 percent_missing
 ```
 
-This leads to a logical question. Are there any other variables that could explain the missing data? Therefore, we also looked at simular graphs while grouping by year and month.
+This leads to a logical question. Are there any other variables that could explain the missing data? Therefore, we also looked at similar graphs while grouping by year and month.
 
 ```{r fig.width=7 }
 art_year <- art_df %>% gather(attribute, value, -auc_year) %>% mutate(missing = ifelse(is.na(value), "yes", "no"))
 year <- ggplot(art_year, aes(x = factor(auc_year), y = attribute, fill = missing)) +
   geom_tile(color = "white") + 
   ggtitle("Missing Values by Year") +
-  xlab("year") + ylab("Feature Name") +
+  xlab("Year") + ylab("Feature Name") +
   scale_fill_viridis(discrete=TRUE) +
   theme_bw()+theme(axis.text.x = element_text(angle = 45, hjust = 1))
 art_month <- art_df %>% gather(attribute, value, -auc_month) %>% mutate(missing = ifelse(is.na(value), "yes", "no"))
@@ -211,7 +201,7 @@ month <-ggplot(art_month, aes(x = factor(auc_month), y = attribute, fill =
 grid.arrange(year, month, nrow=1)
 ```
 
-While month looks more or less equally distributed, there is an interesting pattern forming in the year view. It comes as no surprise that older years (2006-2009) would carry all of the missing values for features around description and condition. There also looks to be certain years (more like 3 year periods) with perfectly clean data: 2010-2012 and 2015-2017. 
+While month looks more or less equally distributed (except hammer price), there is an interesting pattern forming in the year view. It comes as no surprise that older years (2006-2009) would carry a lot of the missing values for features around description and condition. There also looks to be certain years (more like 3 year periods) with perfectly clean data: 2010-2012 and 2015-2017. 
 
 Next, let us look at the exact percentages and values for the overall missing data.
 
@@ -221,10 +211,7 @@ library(skimr)
 skimr::skim(art_df) %>% filter(stat =="missing") %>% arrange(desc(value)) %>% select(variable, value) %>% mutate(percent = value/nrow(art_df)) %>% filter (percent>0)
 ```
 
-Looking at the table, it actually appears that the estimates (along with its corresponding values generated during pre-processing) are only missing a very small amount of data (less than 1%). Therefore, such a small error can be easily filtered out in future analysis. 
-
-
-Nonetheless, hammer_price is missing nearly 20%. Besides what we saw when looking by location, our guess is that some auction ids are missing the hammer_price_bp in its entirety and hence the difference. It can be easily checked by looking at the aggregate table. 
+Looking at the table, death and birth year are missing more than 25% of their data. More importantly, hammer_price is missing nearly 20%. Based on what we saw when looking by location, our guess is that some auction ids are missing the hammer_price_bp in its entirety and hence the difference. It can be easily checked by looking at the aggregate table. 
 
 ```{r}
 art_price <- art_df[, c("auction_id", "hammer_price_bp")]
@@ -235,7 +222,7 @@ percent_missing <- art_price %>% group_by(auction_id) %>%
 percent_missing %>% filter(percent_na>=0.4)
 ```
 
-Looking at the data table, there is a significant number of auctions that are missing more than 10% of the price data (sometimes even 100%). Therefore, it must be that not only the locations but also the auction itself is a determining factor in missing hammer price value. 
+Looking at the data table, there is a significant number of auctions that are missing more than 40% of the price data (sometimes even 100%). Therefore, it must be that not only the locations but also the auction itself is a determining factor in missing hammer price value. 
 
 Lastly, we would like to check for correlation between average hammer_price_bp and percentage of missing values (since it is the one feature that matters the most in our analysis and is most prime to such correlations). Could it be that very high/low lots are simply not reported and, therefore, are missing more?
 
@@ -257,7 +244,7 @@ ggplot(corr, aes(average, percent)) + geom_point(col="blue") +ggtitle("Auction A
    labels = scales::trans_format("log10", scales::math_format(10^.x)))
 ```
 
-There does not seem to be very strong correlation between the two variables.Just a subtle suggestion that auctions with smaller average price tend to have more NAs. Therefore, we will only consider location as the main determinant for missing values around hammer_price_bp. 
+There does not seem to be very strong correlation between the two variables. Just a subtle suggestion that auctions with smaller average price tend to have more NAs. Therefore, we will only consider location as the main determinant for missing values around hammer_price_bp. 
 
 Before we move on, let us quickly follow up on the action items from the data quality analysis. 
 
@@ -272,115 +259,89 @@ art_final <- art_df %>% filter(!is.na(estimate_low)) %>%
 ```
 
 # Main Analysis (Exploratory Data Analysis)
+
 Our research can be divided into three sections:
 General questions about the auction information, understanding fluctuations in lot prices and deriving general conclusion. 
+
 ## General Auction Information
+
 We started by asking many questions about possible relationships between variables. The first set of plots will explore the correlation between number of lots sold and year, location and season. We were hoping to notice meaningful trends that can be further explored in subsequent sections. Since we had only a few locations, seasons and years we chose a barchart and excluded duplicate rows by the 'number of lots' column.
 
 ```{r fig.height = 4, fig.width = 8}
 library(gridExtra)
 ##Lots by location
-
-MyData3 <- subset(art_final, select=c( "location", "number_of_lots" ))
-MyData3 <- MyData3[!duplicated(MyData3$number_of_lots),]
-
-MyData4 <- MyData3 %>% group_by(location)%>% summarise(B=sum(number_of_lots)) 
-
-p1 <- ggplot(MyData4, aes(x= location, y = B)) + 
-    geom_bar( stat='identity', color="blue", fill="grey")  +labs(x = "Location")+labs(y = "Total number of lots") + ggtitle("Number of lots sold by location") + theme(plot.title = element_text(hjust = 0.5,face="bold")) + theme_minimal() 
-
-MyData_1 <- subset(art_final, select=c( "auc_year", "number_of_lots" ))
-
-MyData_1 <- MyData_1[!duplicated(MyData_1$number_of_lots),]
-
-MyData_1 <- MyData_1 %>% group_by(auc_year)%>% summarise(B=sum(number_of_lots)) 
-
-p2 <- ggplot(MyData_1, aes(x= auc_year, y = B)) + 
-    geom_bar( stat='identity', color="yellow", fill="grey")  +labs(x = "Auction year")+labs(y = "Total number of lots") + ggtitle("Number of lots sold by year") + theme(plot.title = element_text(hjust = 0.5,face="bold")) + theme_minimal()+ scale_x_continuous(breaks= c(2006, 2010, 2014, 2017)) 
-
+art_info <- subset(art_final, select=c( "location", "number_of_lots" ))
+art_info <- art_info[!duplicated(art_info$number_of_lots),]
+art_group <- art_info %>% group_by(location)%>% summarise(B=sum(number_of_lots)) 
+p1 <- ggplot(art_group, aes(x= location, y = B)) + 
+    geom_bar( stat='identity', color="royalblue", fill="grey")  +labs(x = "Location")+labs(y = "Total number of lots") + ggtitle("Number of lots sold by location") + theme(plot.title = element_text(hjust = 0.5,face="bold")) + theme_minimal() 
+art_info2 <- subset(art_final, select=c( "auc_year", "number_of_lots" ))
+art_info2 <- art_info2[!duplicated(art_info2$number_of_lots),]
+art_info2 <- art_info2 %>% group_by(auc_year)%>% summarise(B=sum(number_of_lots)) 
+p2 <- ggplot(art_info2, aes(x= auc_year, y = B)) + 
+    geom_bar( stat='identity', color="royalblue", fill="grey")  +labs(x = "Auction year")+labs(y = "Total number of lots") + ggtitle("Number of lots sold by year") + theme(plot.title = element_text(hjust = 0.5,face="bold")) + theme_minimal()+ scale_x_continuous(breaks= c(2006, 2010, 2014, 2017)) 
 grid.arrange(p1, p2, nrow = 1)
 ```
 
 ```{r}
-
 ##Lots by season
-
-MyData3 <- subset(art_final, select=c( "auc_season", "number_of_lots" ))
-
-MyData3 <- MyData3[!duplicated(MyData3$number_of_lots),]
-
-MyData4 <- MyData3 %>% group_by(auc_season)%>% summarise(B=sum(number_of_lots)) 
-
-ggplot(MyData4, aes(x= auc_season, y = B)) + 
-    geom_bar( stat='identity', color="orange", fill="grey")  +labs(x = "Auction season")+labs(y = "Total number of lots") + ggtitle("Number of lots sold by season") + theme(plot.title = element_text(hjust = 0.5,face="bold"))  + theme_minimal()
-
+art_info <- subset(art_final, select=c( "auc_season", "number_of_lots" ))
+art_info <- art_info[!duplicated(art_info$number_of_lots),]
+art_group <- art_info %>% group_by(auc_season)%>% summarise(B=sum(number_of_lots)) 
+ggplot(art_group, aes(x= auc_season, y = B)) + 
+    geom_bar( stat='identity', color="royalblue", fill="grey")  +labs(x = "Auction season")+labs(y = "Total number of lots") + ggtitle("Number of lots sold by season") + theme(plot.title = element_text(hjust = 0.5,face="bold"))  + theme_minimal()
 ```
-Graphs above suggest that fall and spring are the most popular seasons to acquire a masterpiece. At the same time, there was a significant increase in number of lots sold since 2010, suggesting that investors started to see the art market as a form of long-term non-liquid investment after the financial crisis of 2008. The main hubs for art exchanges formed in London, New York and Paris.
+
+Graphs above suggest that fall and spring are the most popular seasons to acquire a masterpiece. At the same time, there was a significant increase in number of lots sold since 2010, suggesting that investors started to see the art market as a form of long-term non-liquid investment after the financial crisis of 2008 (we will explore this concept in more detail later in the analysis). The main hubs for art exchanges formed in London, New York and Paris.
 
 Plotting the number of auctions based on location, season and year turned out to have similar results and confirmed ideas suggested above.
 
 ```{r fig.height =4, fig.width = 8}
-
 ##Auctions by location, year, season
+art_info <- subset(art_final, select=c( "auction_id", "location" ))
+art_info <- art_info[!duplicated(art_info$auction_id),]
+art_group <- art_info %>% group_by(location)%>% count(auction_id) %>% summarise(B=sum(n)) 
+p1<-ggplot(art_group, aes(x= location, y = B)) + 
+    geom_bar( stat='identity', color="royalblue", fill="grey")  +labs(x = "Auction location")+labs(y = "Number of auctions") + ggtitle("Number of auctions by location") + theme(plot.title = element_text(hjust = 0.5,face="bold"))  + theme_minimal()
 
-MyData3 <- subset(art_final, select=c( "auction_id", "location" ))
+art_info2 <- subset(art_final, select=c( "auction_id", "auc_year" ))
+art_info2 <- art_info2[!duplicated(art_info2$auction_id),]
+art_info2 <- art_info2 %>% group_by(auc_year)%>% count(auction_id) %>% summarise(B=sum(n)) 
 
-MyData3 <- MyData3[!duplicated(MyData3$auction_id),]
-
-MyData4 <- MyData3 %>% group_by(location)%>% count(auction_id) %>% summarise(B=sum(n)) 
-
-
-p1<-ggplot(MyData4, aes(x= location, y = B)) + 
-    geom_bar( stat='identity', color="green", fill="grey")  +labs(x = "Auction location")+labs(y = "Number of auctions") + ggtitle("Number of auctions by location") + theme(plot.title = element_text(hjust = 0.5,face="bold"))  + theme_minimal()
-
-MyData_1 <- subset(art_final, select=c( "auction_id", "auc_year" ))
-
-MyData_1 <- MyData_1[!duplicated(MyData_1$auction_id),]
-
-MyData_1 <- MyData_1 %>% group_by(auc_year)%>% count(auction_id) %>% summarise(B=sum(n)) 
-
-
-p2<- ggplot(MyData_1, aes(x= auc_year, y = B)) + 
-    geom_bar( stat='identity', color="blue", fill="grey")+labs(y = "Number of auctions")+labs(x = "Year") + ggtitle("Number of auctions by year") + theme(plot.title = element_text(hjust = 0.5,face="bold"))  + theme_minimal()
-
+p2<- ggplot(art_info2, aes(x= auc_year, y = B)) + 
+    geom_bar( stat='identity', color="royalblue", fill="grey")+labs(y = "Number of auctions")+labs(x = "Year") + ggtitle("Number of auctions by year") + theme(plot.title = element_text(hjust = 0.5,face="bold"))  + theme_minimal()
 grid.arrange(p1, p2, nrow = 1)
 ```
 
 ```{r}
-
 ##Auctions by season
-
-MyData3 <- subset(art_final, select=c( "auction_id", "auc_season" ))
-
-MyData3 <- MyData3[!duplicated(MyData3$auction_id),]
-
-MyData4 <- MyData3 %>% group_by(auc_season)%>% count(auction_id) %>% summarise(B=sum(n)) 
-
-ggplot(MyData4, aes(x= auc_season, y = B)) + 
-    geom_bar( stat='identity', color="orange", fill="grey")  +labs(x = "Auction season")+labs(y = "Number of auctions") + ggtitle("Number of auctions by season") + theme(plot.title = element_text(hjust = 0.5,face="bold"))  + theme_minimal()
-
+art_info <- subset(art_final, select=c( "auction_id", "auc_season" ))
+art_info <- art_info[!duplicated(art_info$auction_id),]
+art_group <- art_info %>% group_by(auc_season)%>% count(auction_id) %>% summarise(B=sum(n)) 
+ggplot(art_group, aes(x= auc_season, y = B)) + 
+    geom_bar( stat='identity', color="royalblue", fill="grey")  +labs(x = "Auction season")+labs(y = "Number of auctions") + ggtitle("Number of auctions by season") + theme(plot.title = element_text(hjust = 0.5,face="bold"))  + theme_minimal()
 ```
 
-To see what are the different triggers of variability in art prices we decided to explore fluctuations in Hammer Prices. 
-We created a histogram with a density curve to visualize the distribution of Hammer Price.
+To see what are the different triggers of variability in art prices we decided to explore fluctuations in Hammer Prices. Therefore, we created a histogram with a density curve to visualize the distribution of Hammer Price.
+
 ```{r}
 ##Hammer Price
-ggplot(art_final, aes(x= hammer_price_bp_usd)) + geom_histogram(aes(y=..density..))  + geom_density() + xlim(0,1500000) + theme_minimal()
+ggplot(art_final, aes(x= hammer_price_bp_usd)) + geom_histogram(aes(y=..density..))  + geom_density(col="red") + xlim(0,1500000) + theme_minimal() +xlab("Price") +ylab("Density") +ggtitle("Hammer Price Distribution")
 ```
 
 Distribution of Hammer Price is skewed to the right and has a long tail. We believe the reason for this is variability in art geners (Contemporary vs Renaissance for example) sold on the market. Some older masterpieces can be traded at prices that are completly out of range for contemporary artists. 
+
 Constracting valuable models in the next parts of our research fully depend on the ability to manipulate hammer price in the right way. We decided to remove the outliers.
+
 ```{r}
 art_final <-art_final%>%
           filter(abs(art_final$hammer_price_bp_usd - 
                median(art_final$hammer_price_bp_usd)) <=3*sd(art_final$hammer_price_bp_usd))
 ```
 ```{r}
-
-#ggplot(df2, aes(x= hammer_price_bp_usd)) + geom_histogram(aes(y=..density..))  + geom_density() + xlim(0,1500000)+ theme_minimal()
+#ggplot(df3, aes(x= hammer_price_bp_usd)) + geom_histogram(aes(y=..density..))  + geom_density() + xlim(0,1500000)+ theme_minimal()
 
 ```
-
 
 ```{r fig.height = 4, fig.width = 8}
 
@@ -447,10 +408,13 @@ parcoords(MyDatas,
     ) 
 ```
 
+
 ## Do Certain Lot Attributes Result in Higher Price?
 ### Lot Titles
 #### What lots have higher price? 
-To begin the anlaysis, we want to see the titles of expensive lots and plot their size with respect to the prices
+
+To begin the analysis, we want to see the titles of expensive lots and plot their size with respect to the prices.
+
 ```{r}
 df1 <- art_final
 df_wordcloud <- df1[,c("lot_title","hammer_price_bp_usd")]
@@ -461,7 +425,9 @@ pal <- brewer.pal(9, "OrRd")
 pal <- pal[-(1:3)]
 wordcloud(df_wordcloud$lot_title, min.freq = 10,df_wordcloud$hammer_price_bp_usd, scale=c(5, .5), random.order = FALSE, random.color = FALSE, colors= pal)
 ```
+
 A lot of expensive lots appear to have "untitled" in their title. To get a better idea of what words artists tend to name their pieces, we count the frequency of each word appear in all titles and see which words do artists tend to use in the titles.
+
 #### What words appear more often in the lot titles?
 ```{r}
 # collapse the lot_title column by word and count the frequency they appear in the titles.
@@ -479,8 +445,11 @@ word_count <- arrange(word_count,desc(word_count$Freq))[1:300,]
 pal <- brewer.pal(9, "Dark2")
 wordcloud(word_count$temp, word_count$Freq, min.freq =20, scale=c(5, .5), random.order = FALSE, random.color = FALSE, colors= pal)
 ```
+
 Without surprise, "untitled" indeed are the most popular word artists tend to use. In that case, are "untitled" works more likely to receive higher prices?
+
 #### Looking at lots that have name "Untitled", what price ranges are they in? Is it correlated?
+
 ```{r}
 library(vcd)
 df1 <- df1 %>% 
@@ -492,19 +461,27 @@ vcd::mosaic(hammer_price_bp_usd_range~is_untitled, direction = c("v", "h"),df1,
        gp = gpar(fill = c("lightyellow", "lightpink")),
                  labeling = labeling_border(rot_labels = c(0, 45),pos_labels="center"))
 ```
-In the above plot, "1" indicates the lot has "untitled" in it and "0" other wise. Anlayzing the mosaic plot above, we can see that "untitled" actually result in a relatively lower price as less "untitled" lots are in the range "$500,000+" while more "untitled" lots are in the lowest range. If the higher prices can not explain the common use of "untitled", what can?
-We guess that contemprary artists tend to name their arts "untitled". To explroe this, we put together the auction titles where "untitled" works are presente the most and labeled them with art type. 
+
+In the above plot, "1" indicates the lot has "untitled" in it and "0" otherwise. Analyzing the mosaic plot above, we can see that "untitled" actually result in a relatively lower price as less "untitled" lots are in the range "$500,000+" while more "untitled" lots are in the lowest range. If the higher prices cannot explain the common use of "untitled", what can?
+
+We guess that contemporary  artists tend to name their arts "untitled". To explore this, we put together the auction titles where "untitled" works are presented the most and labeled them with art type. 
+
 #### Are "untitled" work mostly contemprary? 
+
 ```{r, fig.width=5}
 untitle_ratio = read.csv("untitle_ratio.csv", header=TRUE)
 #tempstr <-  strtrim(untitle_ratio$auc_title, 20)
 #untitle_ratio$auc_title <- tempstr
 untitle_ratio$is_contemporary = as.factor(untitle_ratio$is_contemporary)
-ggplot(data=untitle_ratio, aes(x=reorder(auc_title,ratio), y=ratio,fill=is_contemporary))+geom_bar(stat="identity")+coord_flip()
+ggplot(data=untitle_ratio, aes(x=reorder(auc_title,ratio), y=ratio,fill=is_contemporary))+geom_bar(stat="identity")+coord_flip() + xlab("Auction Title") + ylab("Ratio") +ggtitle("Auction Titles Based on their Ratio of Occurance")
 ```
-Of the top 20 auctions that have highest "untitled" ratio, we see that contemporary auction is just slighly more than non-contemporary auction. In fact, by looking at auction names of non-contemporary auctions, we realize that smaller pieces of art (such as decoration, furnitures) tend to have "untitled" in their title as well! Perhaps those contribute mostly to the fact that "untitled" work have relatively lower price.
+
+Of the top 20 auctions that have highest "untitled" ratio, we see that contemporary auction is just slightly more than non-contemporary auction. In fact, by looking at auction names of non-contemporary auctions, we realize that smaller pieces of art (such as decoration, furnitures) tend to have "untitled" in their title as well! Perhaps those contribute mostly to the fact that "untitled" work have relatively lower price.
+
 ### Does the era of the lot affect its price?
+
 Here, we will plot the hammer price against artists' birth years. Note that we are using log scales on the y-axis as the range of prices is wide.
+
 ```{r }
 df3 <- df1 %>% 
   filter(df1$birth_year>1700)
@@ -513,16 +490,23 @@ ggplot(df3, aes(birth_year,hammer_price_bp_usd))  +
   geom_point(alpha = .1)  + 
   theme_grey(10)+scale_y_log10()+  geom_density_2d(bins = 5)
 ```
+
 From the above chart, we can see that modern pieces have larger variance. We'd like to try a boxplot to capture this feature.
+
 ```{r}
 #box plot price vs year
 ggplot(df3, aes(auth_era, hammer_price_bp_usd)) +
-  geom_boxplot()+theme(axis.text.x = element_text(angle = 90, hjust = 1))+scale_y_log10()
+  geom_boxplot()+theme(axis.text.x = element_text(angle = 90, hjust = 1))+scale_y_log10() +xlab("Author's Era") +ylab("Price") +ggtitle("Author's Era vs Price of Their Work")
 ```
-We notice that for certain era (e.g. 1750), there are no pieces sold. There are also more outliers for authors born 1900 - 1980. However, due to the coplex change in average price over every 10 years, this box plot looks messy overall. Therefore, we decide to only include the scattor plot as that contains the information more straightforward.
+
+We notice that for certain era (e.g. 1750), there are no pieces sold. There are also more outliers for authors born 1900 - 1980. However, due to the complex change in average price over every 10 years, this box plot looks messy overall. Therefore, we decide to only include the scatter plot as that contains the information more straightforward.
+
 ## Do Certain Extrernal Factors Result in Higher Price?
+
 ###Does the Order Matter?
+
 In general, there are a lot of lots in each auction. In our dataset, the average lot numbers per auction is 357. With the large amount of lots being auctioned, we assume that the most valuable pieces get presented early in the auction. To validate this idea, we normalized the order of lots presented in each auction and plot it against the hammer price.
+
 ```{r}
 ggplot(df1, aes(percent_in_auction,hammer_price_bp_usd))  + 
   geom_smooth(method='lm',formula=y~x,color="red")+
@@ -530,39 +514,47 @@ ggplot(df1, aes(percent_in_auction,hammer_price_bp_usd))  +
   theme_grey(10)+scale_y_log10()+
   facet_wrap(~location)
 ```
+
 ### Is there an impact from the financial crisis?
+
+
+Let's start by looking at the average lot prices of Sothebeys on a monthly scale.
+
 ```{r}
 df1$auc_ymd <- as.Date(df1$auc_year_month_date)
 art_yearfin <- df1 %>% group_by(month=lubridate::floor_date(auc_ymd, "month")) %>% summarise(revenue = mean(hammer_price_bp_usd))
-ggplot() +geom_line(data=art_yearfin, aes(x=month, y=revenue/1000000))+ggtitle("Financial Crisis' Effect on average lot price ($M)")+ylab("average price")+xlab("Time")+theme(axis.text.x = element_text(angle = 45, hjust = 1))+scale_y_log10()
+ggplot() +geom_line(data=art_yearfin, aes(x=month, y=revenue/1000000))+ggtitle("Financial Crisis' Effect on average lot price ($M)")+ylab("Average Price ($M)")+xlab("Year")+theme(axis.text.x = element_text(angle = 45, hjust = 1))+scale_y_log10() +theme_bw()
 ```
 
-Let's start by looking at the average lot prices of Sothebeys on a yearly scale. Our guess is that we are supposed to see a significant drop around the time of the financial crisis. 
+It appears that the monthly scale is not very helpful in determining the effect because of the different fluctuations around each auction. Perhaps looking at the average price with a little less granularity will help? Since the monthly scale appears to have too much "noise," we will redraw the graph looking at a yearly scale instead. Our guess is that we are supposed to see a significant drop around the time of the financial crisis. 
+
+```{r}
+art_finance <- art_final[c("auc_year", "auc_month", "location","hammer_price_bp_usd")] %>% filter(!is.na(hammer_price_bp_usd))
+art_yearfin <- art_finance %>% group_by(auc_year) %>% summarise(av_revenue =mean(hammer_price_bp_usd))
+ggplot(art_yearfin, aes(x=auc_year, y=as.numeric(av_revenue/1000000))) +geom_line(col="darkblue")+ggtitle("Financial Crisis' Effect on Average Auction Price ($M)")+ylab("Average Price ($M)")+xlab("Year") +theme_bw()
+```
+
+Indeed, we are seeing a big dip around late 2010. It may be surprising to see that it took some time for the effect to reach the auction houses. Nonetheless, when thinking back on the world-wide timeline of the Financial Crisis' effect, it did take a few years for it to reach other industries outside of finance. 
+
+Next, let us explore the same effect on the total revenue and see if the same pattern holds.
 
 ```{r}
 art_finance <- art_final[c("auc_year", "auc_month", "location","hammer_price_bp_usd")] %>% filter(!is.na(hammer_price_bp_usd))
 art_yearfin <- art_finance %>% group_by(auc_year) %>% summarise(revenue = sum(hammer_price_bp_usd))
-ggplot(art_yearfin, aes(x=auc_year, y=as.numeric(revenue/1000000))) +geom_line(col="blue")+ggtitle("Financial Crisis' Effect on Auction Revenue ($M)")+ylab("Revenue")+xlab("Year")
+ggplot(art_yearfin, aes(x=auc_year, y=as.numeric(revenue/1000000))) +geom_line(col="darkblue")+ggtitle("Financial Crisis' Effect on Auction Revenue ($M)")+ylab("Revenue ($M)")+xlab("Year")+theme_bw()
 ```
 
-Indeed, we are seeing a big deep around late 2010. It is surprising to see that it took some time for the effect to reach the auction houses. Perhaps it is certain locations that are skewing some of the data. Let us try to facet the data by location and see if that could present us with a better outlook.
-
+We can easily tell that the two graphs are very similar and the total revenue did experience the same drop. Perhaps there are certain locations that are skewing some of the data. Let us try to facet the data by location and see if that could present us with a better outlook. We will be excluding Dubai and Doha due to lack of data for hammer prices (as shows in the data quality part).
 
 ```{r}
-art_locfin <- art_finance %>% group_by(auc_year, location) %>% summarise(revenue = sum(hammer_price_bp_usd))
-ggplot(art_locfin, aes(x=auc_year, y=as.numeric(revenue/1000000))) +geom_line(col="blue")+ggtitle("Financial Crisis' Effect on Auction Revenue ($M)")+ylab("Revenue")+xlab("Year") + facet_wrap(~location, scales ="free_y")
+art_locfin <- art_finance %>% group_by(auc_year, location) %>% summarise(av_revenue = mean(hammer_price_bp_usd)) %>% filter(location %in%  c("NEW YORK", "LONDON", "PARIS", "MILAN"))
+ggplot(art_locfin, aes(x=auc_year, y=as.numeric(av_revenue/1000000))) +geom_line(col="darkblue")+ggtitle("Financial Crisis' Effect on Average Auction Price ($M)")+ylab("Average Price ($M)")+xlab("Year") + facet_wrap(~location, scales ="free_y")+theme_bw()
 ```
 
-It looks like, indeed, some locations do not have consistent data and might be throwing the calculation off (Dubai, Doha, and Amsterdam). Let us tke a look at the same chart without those locations. 
-
-```{r}
-art_locfin <- art_finance %>% group_by(auc_year, location) %>% summarise(revenue = sum(hammer_price_bp_usd)) %>% filter(location %in%  c("HONG KONG", "NEW YORK", "LONDON", "PARIS", "MILAN"))
-ggplot(art_locfin, aes(x=auc_year, y=as.numeric(revenue/1000000))) +geom_line(col="blue")+ggtitle("Financial Crisis' Effect on Auction Revenue ($M)")+ylab("Revenue")+xlab("Year") + facet_wrap(~location, scales ="free_y")
-```
-
-We notice a consistent drop in revenue across all locations above starting 2010. Therefore, our hypothesys must be correct: the financial crisis did have an effect on the auction revenue across the world (specifically significant drops are observed in New York and Hong Kong). 
+We notice a consistent drop in revenue across all locations above starting 2010. Therefore, our original hypothesis must be correct: the financial crisis did have an effect on the auction revenue across the world (specifically significant drops are observed in New York and Hong Kong). 
 
 ###Does Season Matter?
+
 ```{r}
 df1 <- df1 %>% 
   dplyr::mutate(auc_season = forcats::fct_relevel(auc_season, "summer")) %>%
@@ -572,17 +564,26 @@ vcd::mosaic(hammer_price_bp_usd_range~auc_season, direction = c("v", "h"),df1,
        gp = gpar(fill = c("yellow", "purple")),
                  labeling = labeling_border(rot_labels = c(0, 90),pos_labels="center"))
 ```
-The labels of hammer price range did not turn out as neat in the begeinning, however, after changing the order of the seasons, we obtained the above graph indicating the clear correlations between seasons and the lot prices. Specifically, there are more lots sold in spring and fall and lots are sold relatively higher in the fall.
+
+The labels of hammer price range did not turn out as neat in the beginning, however, after changing the order of the seasons, we obtained the above graph indicating the clear correlations between seasons and the lot prices. Specifically, there are more lots sold in spring and fall and lots are sold relatively higher in the fall.
+
 ###Does Location Matter?
+
 ```{r}
 # Elizabet bar plot
 ```
+
 # Executive Summary
-INSERT OPENNING
-Next, we will present our most imporatn findings alongside with graphs.
+
+The explatory visualization part of the project allowed us to dive deep around our original questions of interest. We used the main analysis to narrow down some of the most interesting findings in relation to our dataset.
+
+Next, we will present these findings with graphs in following summary:
+
 ## 1. Art pieces created in the 20th centry on average are sold at higher price.
-There are more lots sold where their authors are born in the 20th centry, specifically in 1900s,1930s and 1960s. For simplicity, we call them "modern" pieces and call the lots whose authors were born before 1900 "older" pieces. From the graph, we can see that modern pieces have higher prices on average while having larger variance too. One plausible explanation is that the price range and values for contemporary art are more likely to uneven due to the nature of the contemporary art.
-```{r}
+
+There are more lots sold where their authors are born in the 20th century, specifically in 1900s,1930s and 1960s. For simplicity, we call them "modern" pieces and call the lots whose authors were born before 1900 "older" pieces. From the graph, we can see that modern pieces have higher prices on average while having larger variance too. One plausible explanation is that the price range and values for contemporary art are more likely to uneven due to the nature of the contemporary art.
+
+```{r ECHO=FALSE}
 df3 <- df2 %>% 
   filter(df2$birth_year>1700)
 ggplot(df3, aes(birth_year,hammer_price_bp_usd))  + 
@@ -592,13 +593,15 @@ ggplot(df3, aes(birth_year,hammer_price_bp_usd))  +
    labels = scales::trans_format("log10", scales::math_format(10^.x)))+geom_density_2d(bins = 5, color="orange")+
     scale_x_continuous(breaks = seq(min(df3$birth_year), max(df3$birth_year),10))+
     theme(axis.text.x = element_text(angle = 45, hjust = 1))+
-  xlab("author birth year")+
+  xlab("Author Birth Year")+
   ylab("Hammer Price")+
   ggtitle("Lot Hammer Price vs Author Birth Year")
 ```
 
 ## 2. The earlier the lots get presented in an auction, the higher price they have.
-Due to large number of lots presented in Sotheby's auctions, the most valuable pieces get presented early on in the auction.From the below graph, we conclude that there is a negative relationship between art prices and order presented for all locations besides Dubai. Particularly Paris has the most obvious negarive relationship.
+
+Due to large number of lots presented in Sotheby's auctions, the most valuable pieces get presented early on in the auction. From the below graph, we conclude that there is a negative relationship between art prices and order presented for all locations besides Dubai. Particularly Paris has the most obvious negative relationship.
+
 ```{r}
 ggplot(df3, aes(percent_in_auction,hammer_price_bp_usd))  + 
   geom_smooth(method='lm',formula=y~x,color="orange")+
@@ -611,8 +614,10 @@ ggplot(df3, aes(percent_in_auction,hammer_price_bp_usd))  +
   ylab("Hammer Price")+
   ggtitle("Lot Hammer Price vs Lot Order in Auction")
 ```
-## 3. Lot prices are closely related the season.
+## 3. Lot prices are closely related to season.
+
 Most of the auctions appear in March and November, thus in the graph we see fall and spring have more lots being sold. Aside from the quantity, the price of the lots are closely related to season as well. We conclude that winter has a positive correlation for lots to be sold in the highest range ($500,000+) as well as the lowest range (<$10,000). Lots sold in Fall, however, appear more likely to fall in the higher price ranges. Lots sold in spring are relatively cheaper compared to lots sold in other seasons.
+
 ```{r}
 df1$Hammer_Price_Range <- df1$hammer_price_bp_usd_range
 df1$Auction_Season <- df1$auc_season
@@ -622,7 +627,17 @@ vcd::mosaic(Hammer_Price_Range~Auction_Season, direction = c("v", "h"),df1,
 ```
 
 ## 4. Conclusion about location
-## 5. Conclusiion about financial crisis
+
+## 5. Financial Crisis had a negative effect on average price across almost all locations around the world
+
+By looking at the graph, one can see how each location experienced a significant drop in average price approximately 2-3 years after the initial Financial Crisis hit in 2008. While some locations have a stronger and clearer trend than other, the directional conclusion stays the same. Some locations like New York and London lost close or even more than 50% of value (average price) during that time. 
+
+```{r ECHO=FALSE}
+art_locfin <- art_finance %>% group_by(auc_year, location) %>% summarise(av_revenue = mean(hammer_price_bp_usd)) %>% filter(location %in%  c("NEW YORK", "LONDON", "PARIS", "MILAN"))
+ggplot(art_locfin, aes(x=auc_year, y=as.numeric(av_revenue/1000000))) +geom_line(col="darkblue")+ggtitle("Financial Crisis' Effect on Average Auction Price ($M)")+ylab("Average Price ($M)")+xlab("Year") + facet_wrap(~location, scales ="free_y")+theme_bw()
+```
+
+In addition, it is important to notice the major climb in prices around 2012-2013. This observation goes in support with our original hypothesis that investors began putting more money into art as a new form of investment after the financial crisis. In all locations (with an exception of Paris), the average lot price has recovered and surpassed the one before the crisis. 
 
 # Interactive Componenet
 
