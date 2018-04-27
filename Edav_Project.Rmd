@@ -151,25 +151,38 @@ visna(art_df, sort= "b")
 
 Looking at the output above, we can conclude that the overall state of the dataset is relatively good. The second most common pattern has no missing values while the two most "problematic" features appear to be death_year and birth_year.
 
-One important observation we will need to be careful about during further analysis is a relatively significant amount of missing values under hammer_price_bp feature. We have explored qualitative reasons behind the missing values in that category with the provider of the data. After careful observation, we found out that the missing values are actually driven by two locations that might have less strict regulations around data governance (Doha, Hong Kong). This observation is outlined in the graph below.
-
+One important observation we will need to be careful about during further analysis is a relatively significant amount of missing values under hammer_price_bp feature. We have explored qualitative reasons behind the missing values in that category with the provider of the data. After careful observation, we found out that the missing values are actually driven by two locations that might have less strict regulations around data governance (Doha and Dubai). The high number of NAs in New York is left unidentified. This observation is outlined in the table below.
 
 ```{r}
-install.packages("viridis")
+art_price <- art_df[, c("location", "hammer_price_bp")]
+percent_missing <- art_price %>% group_by(location) %>%
+  summarise(num_na = sum(is.na(hammer_price_bp)), total = n()) %>%
+  mutate(percent_na = num_na/total)%>%
+  arrange(-percent_na)
+percent_missing 
+```
+
+Let's also look at the percentage of missing value by location for all atributes to check if other features were impacted. 
+
+```{r}
+#install.packages("viridis")
 library(viridis)
-art_location <- art_df %>% gather(attribute, value, -location) %>% mutate(missing = ifelse(is.na(value), "yes", "no"))
-ggplot(art_location, aes(x = location, y = attribute, fill = missing)) +
+art_location <- art_df %>% gather(attribute, value, -location) 
+percent_missing <- art_location %>% group_by(location, attribute) %>%
+  summarise(num_na = sum(is.na(value)), total = n()) %>%
+  mutate(percent_na = num_na/total)
+ggplot(percent_missing, aes(x = location, y = attribute, fill = percent_na)) +
   geom_tile(color = "white") +
   ggtitle("Missing Values by Location") +
   xlab("Location") + ylab("Feature Name") +
-  scale_fill_viridis(discrete=TRUE) +
+  scale_fill_viridis() +
   theme_bw()+
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
-This map allows us to see that some features' missing values like hammer_price_bp, condition, and birth year are actually only missing in certain location (typically in pairs of two). Therefore, we can speculate that this data is MAR (missing at random) depending on a location feature.
+This map allows us to see that some features' missing values like hammer_price_bp, condition, and birth year are actually only missing at a high rate in certain locations. 
 
-Indeed, when looking at the table below, the overall percentage of missing values across different locations varies quite significantly. Amsterdam is the top location with most missing values (8% of total).
+Indeed, when looking at the table below, the overall percentage of missing values across different locations varies quite significantly. Amsterdam is the top location with most missing values (8% of total). Therefore, we can speculate that this data could be MAR (missing at random) depending on a location feature.
 
 ```{r}
 art_location <- art_df %>% gather(attribute, value, -location)
@@ -182,26 +195,34 @@ percent_missing
 
 This leads to a logical question. Are there any other variables that could explain the missing data? Therefore, we also looked at similar graphs while grouping by year and month.
 
-```{r  }
-art_year <- art_df %>% gather(attribute, value, -auc_year) %>% mutate(missing = ifelse(is.na(value), "yes", "no"))
-year <- ggplot(art_year, aes(x = factor(auc_year), y = attribute, fill = missing)) +
+```{r}
+art_year <- art_df %>% gather(attribute, value, -auc_year) 
+year_missing <- art_year %>% group_by(auc_year, attribute) %>%
+  summarise(num_na = sum(is.na(value)), total = n()) %>%
+  mutate(percent_na = num_na/total)
+year <- ggplot(year_missing, aes(x = factor(auc_year), y = attribute, fill = 
+                                   percent_na)) +
   geom_tile(color = "white") + 
   ggtitle("Missing Values by Year") +
   xlab("Year") + ylab("Feature Name") +
-  scale_fill_viridis(discrete=TRUE) +
+  scale_fill_viridis() +
   theme_bw()+theme(axis.text.x = element_text(angle = 45, hjust = 1))
-art_month <- art_df %>% gather(attribute, value, -auc_month) %>% mutate(missing = ifelse(is.na(value), "yes", "no"))
-month <-ggplot(art_month, aes(x = factor(auc_month), y = attribute, fill =       
-                                missing)) +
+
+art_month <- art_df %>% gather(attribute, value, -auc_month) 
+month_missing <- art_month %>% group_by(auc_month, attribute) %>%
+  summarise(num_na = sum(is.na(value)), total = n()) %>%
+  mutate(percent_na = num_na/total)
+month <-ggplot(month_missing, aes(x = factor(auc_month), y = attribute, fill =       
+                                percent_na)) +
   geom_tile(color = "white") + 
   ggtitle("Missing Values by Month") +
   xlab("Month") + ylab("Feature Name") +
-  scale_fill_viridis(discrete=TRUE) +
+  scale_fill_viridis() +
   theme_bw()+theme(axis.text.x = element_text(angle = 45, hjust = 1))
-grid.arrange(year, month, nrow=1)
+grid.arrange(year, month)
 ```
 
-While month looks more or less equally distributed (except hammer price), there is an interesting pattern forming in the year view. It comes as no surprise that older years (2006-2009) would carry a lot of the missing values for features around description and condition. There also looks to be certain years (more like 3 year periods) with perfectly clean data: 2010-2012 and 2015-2017. 
+It comes as no surprise that older years (2006-2009) would carry a lot of the missing values for features around description and condition. There also looks to be certain periods with relatively clean data: 2012-2013 and 2015-2017. Another interesting observation is the fact that certain seasons (Winter and beginning of Spring) tend to have more missing values than other months.
 
 Next, let us look at the exact percentages and values for the overall missing data.
 
@@ -249,13 +270,13 @@ There does not seem to be very strong correlation between the two variables. Jus
 Before we move on, let us quickly follow up on the action items from the data quality analysis. 
 
 1. filter out NAs for price estimates
-2. take a note to exclude Doha and Hong Kong fro hammer_price_bp analysis
+2. take a note to exclude Doha and Dubai fro hammer_price_bp analysis due to low base high NAs
 
 ```{r}
 # construct final dataset based on the quality analysis
 art_final <- art_df %>% filter(!is.na(estimate_low)) %>%
             drop_na(hammer_price_bp_usd) %>%
-          filter(location %in%  c("NEW YORK", "LONDON", "PARIS", "MILAN","DUBAI","AMSTERDAM"))
+          filter(location %in%  c("HONG KONG", "NEW YORK", "LONDON", "PARIS", "MILAN","AMSTERDAM"))
 ```
 
 # Main Analysis (Exploratory Data Analysis)
@@ -657,7 +678,7 @@ vcd::mosaic(Hammer_Price_Range~Auction_Season, direction = c("v", "h"),df1,
 ```
 
 
-## 5. Financial Crisis had a negative effect on average price across almost all locations around the world
+## 4. Financial Crisis had a negative effect on average price across almost all locations around the world
 
 By looking at the graph, one can see how each location experienced a significant drop in average price approximately 2-3 years after the initial Financial Crisis hit in 2008. While some locations have a stronger and clearer trend than other, the directional conclusion stays the same. Some locations like New York and London lost close or even more than 50% of value (average price) during that time. 
 
