@@ -699,8 +699,8 @@ This view allows users to see all of the lots sold by their price and timeframe.
 
 ### Instructions ### 
 
-There are quite a few great aspect of this chart that could be very helpful for the user:
+Each vertical line indicates an auction, and all the data points along that line are the lots (pieces of art) that were sold in that auction. Auctions are colored by location so users can see where in the world the auction took place. The average line indicates the average price at which lots were sold in aggregate for the selected year. Additionally, there are a number of ways users can interact with this scatter plot including:
 
-1. **Change Year** - Click on the arrows next to the year to either move a year forward or backwards. This can help to compare the different distributions and average price of lots across all years in our dataset.
-2. **See Lot Details** - Hover over each circle to see the details of the lot transaction. You should expect to see a window that is showing the hammer price as well as the picture of the lot. Keep in mind that a lot of the lots have their pictures protected by the copyright (so they will not show). Nonetheless, some of the later ones typicaally do:)
-2.  **Spread Data Points ** - to better see each data point for the details, use the button on the top right that says: "Jitter" This would jitter the points from their original location to better see all options. One can easily bring the points back to proper location by unclicking the button.
+1. **Change Year** - Click on the arrows next to the year to either move a year forward or backwards (2006-2018). This can help to compare the different distributions and average price of lots across all years in our dataset.
+2. **See Lot Details** - Hover over each circle to see the details of the lot transaction. You should expect to see the realized hammer price (sale price) as well as a picture of the actual piece of art. Keep in mind that many of the lots have their pictures copyright protected by Sothebys and will not be display. Nonetheless, most of the more recent images (2017-18) are available. :)
+3.  **Spread Data Points ** - Since there are so many data points per auction plotted along the same day, users can add jitter to better observe each data point and counteract overplotting. Click the button that says "Jitter" and this will spread the points from their original location to better see all options. One can easily bring the points back to proper location by unclicking the button.
