@@ -432,7 +432,6 @@ MyDatas <-subset(art_final, select=c( "nth_in_auction", "auc_year" , "birth_year
 
 library(GGally)
 ggparcoord(MyDatas, columns = 1:(ncol(MyDatas)-1), scale = "uniminmax", groupColumn = "location", alphaLines =0.2) 
-
 ```
 
 ```{r fig.height = 4, fig.width =10}
