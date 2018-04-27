@@ -364,7 +364,7 @@ art_final <-art_final%>%
           filter(abs(art_final$hammer_price_bp_usd - 
                median(art_final$hammer_price_bp_usd)) <=3*sd(art_final$hammer_price_bp_usd))
 
-ggplot(art_final, aes(x= hammer_price_bp_usd)) + geom_histogram(aes(y=..density..))  + geom_density(col="blue") + xlim(0,1500000)+ theme_minimal() +xlab("Price") +ylab("Density") +ggtitle("Hammer Price Distribution (New)")+ theme(plot.title = element_text(hjust = 0.5,face="bold"))
+ggplot(art_final, aes(x= hammer_price_bp_usd)) + geom_histogram(aes(y=..density..))  + geom_density(col="blue") + xlim(0,1500000)+ theme_minimal() +xlab("Price") +ylab("Density") +ggtitle("Hammer Price Distribution (New)")+ theme(plot.title = element_text(hjust = 0.5,face="bold"))+scale_y_continuous(labels = scales::comma)
 ```
 
 Adjusted hammer price brought our attention to distribution of revenue over time and location. For both plots we chose a bar chart. 
@@ -380,7 +380,7 @@ MyData5 <- MyData %>% group_by(location)%>% summarise(B=sum(hammer_price_bp_usd)
 
 
 p1 <- ggplot(MyData5, aes(x= location, y = B)) + 
-    geom_bar( stat='identity', color="yellow", fill="grey")+labs(y = "Auction Revenue")+labs(x = "Location") + ggtitle("Auction revenue by location") + theme_minimal() + theme(plot.title = element_text(hjust = 0.5,face="bold"))
+    geom_bar( stat='identity', color="yellow", fill="grey")+labs(y = "Auction Revenue")+labs(x = "Location") + ggtitle("Auction revenue by location") + theme_minimal() + theme(plot.title = element_text(hjust = 0.5,face="bold"))+scale_y_continuous(labels = scales::comma)
 
 ##revenue by year
 
@@ -389,7 +389,7 @@ MyData_1 <- subset(art_final, select=c( "auc_year", "auction_id", "hammer_price_
 MyData_1 <- MyData_1 %>% group_by(auc_year)%>% summarise(B=sum(hammer_price_bp_usd)) 
 
 p2<-ggplot(MyData_1, aes(x= auc_year, y = B)) + 
-    geom_bar(stat='identity', color="green", fill="grey")+labs(y = "Auction Revenue")+labs(x = "Year") + ggtitle("Auction revenue by year") + theme_minimal()  + theme(plot.title = element_text(hjust = 0.5,face="bold"))
+    geom_bar(stat='identity', color="green", fill="grey")+labs(y = "Auction Revenue")+labs(x = "Year") + ggtitle("Auction revenue by year") + theme_minimal()  + theme(plot.title = element_text(hjust = 0.5,face="bold"))+scale_y_continuous(labels = scales::comma)
 
 grid.arrange(p1, p2, nrow = 1)
 
@@ -571,7 +571,7 @@ It appears that the monthly scale is not very helpful in determining the effect 
 ```{r}
 art_finance <- art_final[c("auc_year", "auc_month", "location","hammer_price_bp_usd")] %>% filter(!is.na(hammer_price_bp_usd))
 art_yearfin <- art_finance %>% group_by(auc_year) %>% summarise(av_revenue =mean(hammer_price_bp_usd))
-ggplot(art_yearfin, aes(x=auc_year, y=as.numeric(av_revenue/1000000))) +geom_line(col="darkblue")+ggtitle("Financial Crisis' Effect on Average Auction Price ($M)")+ylab("Average Price ($M)")+xlab("Year") +theme_bw()
+ggplot(art_yearfin, aes(x=auc_year, y=as.numeric(av_revenue/1000000))) +geom_line(col="darkblue")+ggtitle("Financial Crisis' Effect on Average Auction Price ($M)")+ylab("Average Price ($M)")+xlab("Year") +theme_bw()+scale_x_continuous(breaks = seq(min(art_final$auc_year), max(art_final$auc_year),1))
 ```
 
 Indeed, we observe a big dip around late 2010. It may be surprising to see that it took some time for the effect to reach the auction houses. Nonetheless, when thinking back on the global time line of the Financial Crisis' effect, it did take a few years for it to reach other industries outside of finance. 
@@ -581,14 +581,14 @@ Next, let us explore the same effect on the total revenue and see if the same pa
 ```{r}
 art_finance <- art_final[c("auc_year", "auc_month", "location","hammer_price_bp_usd")] %>% filter(!is.na(hammer_price_bp_usd))
 art_yearfin <- art_finance %>% group_by(auc_year) %>% summarise(revenue = sum(hammer_price_bp_usd))
-ggplot(art_yearfin, aes(x=auc_year, y=as.numeric(revenue/1000000))) +geom_line(col="darkblue")+ggtitle("Financial Crisis' Effect on Auction Revenue ($M)")+ylab("Revenue ($M)")+xlab("Year")+theme_bw()
+ggplot(art_yearfin, aes(x=auc_year, y=as.numeric(revenue/1000000))) +geom_line(col="darkblue")+ggtitle("Financial Crisis' Effect on Auction Revenue ($M)")+ylab("Revenue ($M)")+xlab("Year")+theme_bw()+scale_x_continuous(breaks = seq(min(art_final$auc_year), max(art_final$auc_year),1))
 ```
 
 We can easily tell that the two graphs are very similar and that total revenue did experience the same drop. Perhaps there are certain locations that are skewing some of the data. Let us try to facet the data by location and see if that could present us with a better outlook. We will be excluding Dubai and Doha due to lack of data for hammer prices (as shows in the data quality part).
 
 ```{r}
-art_locfin <- art_finance %>% group_by(auc_year, location) %>% summarise(av_revenue = mean(hammer_price_bp_usd)) %>% filter(location %in%  c("NEW YORK", "LONDON", "PARIS", "MILAN"))
-ggplot(art_locfin, aes(x=auc_year, y=as.numeric(av_revenue/1000000))) +geom_line(col="darkblue")+ggtitle("Financial Crisis' Effect on Average Auction Price ($M)")+ylab("Average Price ($M)")+xlab("Year") + facet_wrap(~location, scales ="free_y")+theme_bw()
+art_locfin <- art_finance %>% group_by(auc_year, location) %>% summarise(av_revenue = mean(hammer_price_bp_usd)) %>% filter(location %in%  c("AMSTERDAM","HONG KONG","NEW YORK", "LONDON", "PARIS", "MILAN"))
+ggplot(art_locfin, aes(x=auc_year, y=as.numeric(av_revenue/1000000))) +geom_line(col="darkblue")+ggtitle("Financial Crisis' Effect on Average Auction Price ($M)")+ylab("Average Price ($M)")+xlab("Year") + facet_wrap(~location, scales ="free_y")+theme_bw()+scale_x_continuous(breaks = seq(min(art_final$auc_year), max(art_final$auc_year),1))+theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
 We notice a consistent drop in revenue across all locations above starting 2010. Therefore, our original hypothesis seems correct: the financial crisis did have an effect on the auction revenue across the world (specifically significant drops are observed in New York and Hong Kong). 
@@ -623,7 +623,7 @@ ggplot(MyData_2b, aes(x= location, y = B)) +
 
 ```
 
-From the graph it can be seen that Milan, London and New York have the highest average lot price. Which confirms our assumption from part 1 that New York and London are the main hubs for art exchange. 
+From the graph it can be seen that Hong Kong, London and New York have the highest average lot price. Which confirms our assumption from part 1 that New York and London are the main hubs for art exchange. 
 
 # Executive Summary
 
@@ -635,7 +635,7 @@ Next, we will present these findings with graphs in following summary:
 
 There are more lots sold where their authors are born in the 20th century, specifically in 1900s,1930s and 1960s. For simplicity, we call them "modern" pieces and call the lots whose authors were born before 1900 "older" pieces. From the graph, we can see that modern pieces have higher prices on average while having larger variance too. One plausible explanation is that the price range and values for contemporary art are more likely to uneven due to the nature of the contemporary art.
 
-```{r ECHO=FALSE}
+```{r echo=FALSE}
 ggplot(df3, aes(birth_year,hammer_price_bp_usd))  + 
   geom_smooth(method='lm',formula=y ~ poly(x, 3),color="orange")+
   geom_point(alpha = .1)  + 
@@ -652,7 +652,7 @@ ggplot(df3, aes(birth_year,hammer_price_bp_usd))  +
 
 Due to large number of lots presented in Sotheby's auctions, the most valuable pieces get presented early on in the auction. From the below graph, we conclude that there is a negative relationship between art prices and order presented for all locations besides Dubai. Particularly Paris has the most obvious negative relationship.
 
-```{r}
+```{r echo=FALSE}
 ggplot(df3, aes(percent_in_auction,hammer_price_bp_usd))  + 
   geom_smooth(method='lm',formula=y~x,color="orange")+
   geom_point(alpha = .05)  + 
@@ -664,13 +664,21 @@ ggplot(df3, aes(percent_in_auction,hammer_price_bp_usd))  +
   ylab("Hammer Price")+
   ggtitle("Lot Hammer Price vs Lot Order in Auction")
 ```
+
 ## 3. Lot prices are closely related to season.
 
 Most of the auctions appear in March and November, thus in the graph we see fall and spring have more lots being sold. Aside from the quantity, the price of the lots are closely related to season as well. We conclude that winter has a positive correlation for lots to be sold in the highest range ($500,000+) as well as the lowest range (<$10,000). Lots sold in Fall, however, appear more likely to fall in the higher price ranges. Lots sold in spring are relatively cheaper compared to lots sold in other seasons.
 
-```{r}
+```{r echo=FALSE}
+
 df1$Hammer_Price_Range <- df1$hammer_price_bp_usd_range
 df1$Auction_Season <- df1$auc_season
+df1 <- df1 %>% 
+  dplyr::mutate(Auction_Season = forcats::fct_relevel(Auction_Season, "summer")) %>%
+  dplyr::mutate(Auction_Season = forcats::fct_relevel(Auction_Season, "fall")) %>%
+  dplyr::mutate(Auction_Season = forcats::fct_relevel(Auction_Season, "winter"))
+
+
 vcd::mosaic(Hammer_Price_Range~Auction_Season, direction = c("v", "h"),df1,
        gp = gpar(fill = c("yellow", "purple")),
                  labeling = labeling_border(rot_labels = c(0, 90),pos_labels="center"))
@@ -681,9 +689,9 @@ vcd::mosaic(Hammer_Price_Range~Auction_Season, direction = c("v", "h"),df1,
 
 By looking at the graph, one can see how each location experienced a significant drop in average price approximately 2-3 years after the initial Financial Crisis hit in 2008. While some locations have a stronger and clearer trend than other, the directional conclusion stays the same. Some locations like New York and London lost close or even more than 50% of value (average price) during that time. 
 
-```{r ECHO=FALSE}
-art_locfin <- art_finance %>% group_by(auc_year, location) %>% summarise(av_revenue = mean(hammer_price_bp_usd)) %>% filter(location %in%  c("NEW YORK", "LONDON", "PARIS", "MILAN"))
-ggplot(art_locfin, aes(x=auc_year, y=as.numeric(av_revenue/1000000))) +geom_line(col="darkblue")+ggtitle("Financial Crisis' Effect on Average Auction Price ($M)")+ylab("Average Price ($M)")+xlab("Year") + facet_wrap(~location, scales ="free_y")+theme_bw()
+```{r echo=FALSE}
+art_locfin <- art_finance %>% group_by(auc_year, location) %>% summarise(av_revenue = mean(hammer_price_bp_usd)) %>% filter(location %in%  c("HONG KONG","NEW YORK", "PARIS", "MILAN"))
+ggplot(art_locfin, aes(x=auc_year, y=as.numeric(av_revenue/1000000))) +geom_line(col="darkblue")+ggtitle("Financial Crisis' Effect on Average Auction Price ($M)")+ylab("Average Price ($M)")+xlab("Year") + facet_wrap(~location, scales ="free_y")+theme_bw()+scale_x_continuous(breaks = seq(min(art_final$auc_year), max(art_final$auc_year),1))+theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
 In addition, it is important to notice the major climb in prices around 2012-2013. This observation goes in support with our original hypothesis that investors began putting more money into art as a new form of investment after the financial crisis. In all locations (with an exception of Paris), the average lot price has recovered and surpassed the one before the crisis. 
@@ -710,3 +718,20 @@ Each vertical line indicates an auction, and all the data points along that line
 1. **Change Year** - Click on the arrows next to the year to either move a year forward or backwards (2006-2018). This can help to compare the different distributions and average price of lots across all years in our dataset.
 2. **See Lot Details** - Hover over each circle to see the details of the lot transaction. You should expect to see the realized hammer price (sale price) as well as a picture of the actual piece of art. Keep in mind that many of the lots have their pictures copyright protected by Sothebys and will not be display. Nonetheless, most of the more recent images (2017-18) are available. :)
 3.  **Spread Data Points ** - Since there are so many data points per auction plotted along the same day, users can add jitter to better observe each data point and counteract overplotting. Click the button that says "Jitter" and this will spread the points from their original location to better see all options. One can easily bring the points back to proper location by unclicking the button.
+
+#Conclusion
+
+Through our exploration with Sotheby’s auction data, we not only learned interesting trends in the art market and understood how different factors affect lot prices (such as order presented in auction, impact of financial crisis etc), but also gained a deeper understanding in visualization theory and practiced interactive visualization with modern technology. Some of the lessons learned are:
+
+1.Scaling is important. At first, we used continuous scale in our y-axis when it comes to plotting prices. However, due to large range and uneven distribution of the price, the graphs gave us - trivial information.  Therefore, we decided to use log scale for most of our analysis. It is worth to note that adopting log scale has the limitation to label meaningfully as it would be hard to show “millions” in a log scale.
+
+2.Data format and quality is essential to any good analysis. Without excluding NAs and filtering some of the locations with missing data we would not have been able to successfully conduct the analysis.
+
+3.Defining questions before starting the analysis makes the work more efficient and productive. The questions guided us through the process and allows us to stay on track.
+
+4.Preprocessing is key to deep analysis. Most of our visualizations are actually built on the features (columns) that were artificially created through data preprocessing. Anticipating analysis needs and creating those extra columns allows us to go above and beyond in answering the questions asked.
+
+When conducting the analysis, there were limitations due to our data. For example, when analysing the effect of certain lot titles (e.g. “untitled”) on lot prices, we weren’t able to distinguish contemporary auctions from other types of auctions on a larger scale. Thus, if provided auction type field, we can explore this area further. 
+
+For future analysis, we’d also be interested in collecting more data from other auction houses such as Christie’s and analyzing trends on a greater scale. In addition, we are curious if the findings are different between different auction houses and if so, why. It might be also interesting to explore the trends in the art market for Asia, since in our graphs, Hong Kong has a high average price among different locations. The rising interest towards art auctions was widely covered in the different art publications. Lastly we could further explore is the amount of unsold lots for every auction. This data was not included in our data set, but can be added based on Sotheby’s resources and publications. 
+
