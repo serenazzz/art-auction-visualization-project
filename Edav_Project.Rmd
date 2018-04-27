@@ -426,12 +426,9 @@ To conclude exploration of data we created a parallel coordinate plot for auctio
 
 ```{r fig.height = 4, fig.width = 8}
 
-MyDatas <-subset(art_final, select=c( "nth_in_auction", "auc_year" , "birth_year", "hammer_price_bp_usd", "location"))
-
-
-library(GGally)
-ggparcoord(MyDatas, columns = 1:(ncol(MyDatas)-1), scale = "uniminmax", groupColumn = "location", alphaLines =0.2) 
-
+MyDatas <-subset(art_final, select=c( "percent_in_auction", "auc_year" , "birth_year", "hammer_price_bp_usd", "location"))
+MyDatas<- MyDatas %>%
+  filter(birth_year>1400)
 ```
 
 ```{r fig.height = 4, fig.width =10}
@@ -445,7 +442,7 @@ parcoords(MyDatas,
       colorBy = "location", colorScale = htmlwidgets::JS("d3.scale.category10()"))
     ) 
 ```
-
+From this chart, we can see that most of New York's lots have author born after 1900. However, other than that, we can't read much valuable inforamtion in this graph as the correlations are not strong enough and lines are overlapping.
 
 ## Do Certain Lot Attributes Result in Higher Price?
 ### Lot Titles
@@ -491,9 +488,9 @@ Without surprise, "untitled" indeed are the most popular word artists tend to us
 ```{r}
 library(vcd)
 df1 <- df1 %>% 
-  dplyr::mutate(hammer_price_bp_usd_range = forcats::fct_relevel(hammer_price_bp_usd_range, "<$50,000"))%>%
-  dplyr::mutate(hammer_price_bp_usd_range = forcats::fct_relevel(hammer_price_bp_usd_range, "<$500,000"))%>%
-   dplyr::mutate(hammer_price_bp_usd_range = forcats::fct_relevel(hammer_price_bp_usd_range, "$500,000+"))
+  dplyr::mutate(hammer_price_bp_usd_range = forcats::fct_relevel(hammer_price_bp_usd_range, "<$50K"))%>%
+  dplyr::mutate(hammer_price_bp_usd_range = forcats::fct_relevel(hammer_price_bp_usd_range, "<$500K"))%>%
+   dplyr::mutate(hammer_price_bp_usd_range = forcats::fct_relevel(hammer_price_bp_usd_range, "$500K+"))
 
 vcd::mosaic(hammer_price_bp_usd_range~is_untitled, direction = c("v", "h"),df1,
        gp = gpar(fill = c("lightyellow", "lightpink")),
@@ -506,7 +503,7 @@ We guess that contemporary  artists tend to name their arts "untitled". To explo
 
 #### Are "untitled" work mostly contemprary? 
 
-```{r, fig.width=5}
+```{r fig.width=11}
 untitle_ratio = read.csv("untitle_ratio.csv", header=TRUE)
 #tempstr <-  strtrim(untitle_ratio$auc_title, 20)
 #untitle_ratio$auc_title <- tempstr
@@ -524,9 +521,16 @@ Here, we will plot the hammer price against artists' birth years. Note that we a
 df3 <- df1 %>% 
   filter(df1$birth_year>1700)
 ggplot(df3, aes(birth_year,hammer_price_bp_usd))  + 
-  geom_smooth(method='lm',formula=y ~ poly(x, 3))+
+  geom_smooth(method='lm',formula=y ~ poly(x, 3),color="orange")+
   geom_point(alpha = .1)  + 
-  theme_grey(10)+scale_y_log10()+  geom_density_2d(bins = 5)
+  theme_bw()+scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x),
+   labels = scales::trans_format("log10", scales::math_format(10^.x)))+geom_density_2d(bins = 5, color="orange")+
+    scale_x_continuous(breaks = seq(min(df3$birth_year), max(df3$birth_year),10))+
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+  xlab("Author Birth Year")+
+  ylab("Hammer Price")+
+  ggtitle("Lot Hammer Price vs Author Birth Year")
+
 ```
 
 From the above chart, we can see that modern pieces have larger variance. We'd like to try a boxplot to capture this feature.
@@ -634,8 +638,6 @@ Next, we will present these findings with graphs in following summary:
 There are more lots sold where their authors are born in the 20th century, specifically in 1900s,1930s and 1960s. For simplicity, we call them "modern" pieces and call the lots whose authors were born before 1900 "older" pieces. From the graph, we can see that modern pieces have higher prices on average while having larger variance too. One plausible explanation is that the price range and values for contemporary art are more likely to uneven due to the nature of the contemporary art.
 
 ```{r ECHO=FALSE}
-df3 <- df1 %>% 
-  filter(df1$birth_year>1700)
 ggplot(df3, aes(birth_year,hammer_price_bp_usd))  + 
   geom_smooth(method='lm',formula=y ~ poly(x, 3),color="orange")+
   geom_point(alpha = .1)  + 
