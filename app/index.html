@@ -5,65 +5,8 @@
     <title>Art Auction Visualization</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
     <script src="https://d3js.org/d3.v4.min.js"></script>
+    <link rel="stylesheet" href="style.css">
   </head>
-  <style>
-    .left {
-      float: left;
-    }
-    .padding {
-      padding: 0 10px;
-    }
-    .color {
-      padding: 0 20px;
-    }
-    .blue {
-      color: blue;
-    }
-    .red {
-      color: red;
-    }
-    .green {
-      color: green;
-    }
-    .yellow {
-      color: yellow;
-    }
-    .orange {
-      color: orange;
-    }
-    .fuchsia {
-      color: fuchsia;
-    }
-    .aqua {
-      color: aqua;
-    }
-    .maroon {
-      color: maroon;
-    }
-    .glyphicon-stop {
-      padding-right: 2px;
-    }
-    #color-key {
-      margin-left: 100px;
-      text-align: center;
-    }
-    #title {
-      margin-left: 150px;
-    }
-    #subtext {
-      margin-left: 175px;
-    }
-    #jitter {
-      margin: 35px 0 0 20px;
-    }
-    #checkbox {
-      margin: 0 5px 0 0;
-    }
-    .mini {
-      margin: 0 0 0 45px;
-      font-size: 8px;
-    }
-  </style>
   <body>
 
   <div class="container">
@@ -77,10 +20,15 @@
             <h4 id="jitter"><input type="checkbox" id="checkbox"> Add jitter</h4>
             <a class="mini" href="https://thomasleeper.com/Rcourse/Tutorials/jitter.html" target="_blank">What's that?</a>
           </div>
-          <div class="col-xs-4">
-            <h1 id="scroll_left" class="glyphicon glyphicon-chevron-left left padding"></h1>
-            <h1 class="left" id="current-year"></h1>
-            <h1 id="scroll_right" class="glyphicon glyphicon-chevron-right left padding"></h1>
+          <div class="col-xs-2">
+            <div id="scroller">
+              <h3 id="scroll_left" class="glyphicon glyphicon-chevron-left left padding"></h3>
+              <h3 class="left" id="current-year"></h3>
+              <h3 id="scroll_right" class="glyphicon glyphicon-chevron-right left padding"></h3>
+          </div>
+          </div>
+          <div class="col-xs-1">
+            <button id="instructions">Instructions</button>
           </div>
         </div>
         <div class="row">
@@ -94,18 +42,62 @@
     </div>
   </div>
 
+  <!-- Modal hidden until clicked -->
+  <div id="modal" class="modal">
+    <!-- Instructions for using the visualization -->
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h4>Instructions</h4>
+      <p>
+        Each vertical line indicates an auction, and all the data points along that line are the lots (pieces of art) that were sold in that auction. Auctions are colored by location so users can see where in the world the auction took place. The average line indicates the average price at which lots were sold in aggregate for the selected year. Additionally, there are a number of ways users can interact with this scatter plot including:
+      </p>
+      <ol>
+        <li><b>Change Year:</b> Click on the arrows next to the year to either move a year forward or backwards (2006-2018). This can help to compare the different distributions and average price of lots across all years in our dataset.</li>
+        <li><b>See Lot Details:</b> Hover over each circle to see the details of the lot transaction. You should expect to see the realized hammer price (sale price) as well as a picture of the actual piece of art. Keep in mind that many of the lots have their pictures copyright protected by Sothebys and will not be display. Nonetheless, most of the more recent images (2017-18) are available. :)</li>
+        <li><b>Jitter Data Points:</b> Since there are so many data points per auction plotted along the same day, users can add jitter to better observe each data point and counteract overplotting. Click the button that says "Jitter" and this will spread the points from their original location to better see all options. One can easily bring the points back to proper location by unclicking the button.</li>
+      </ol>
+      </p>
+    </div>
+  </div>
+
+
   <script src="https://www.gstatic.com/firebasejs/4.13.0/firebase.js"></script>
   <script>
-    // This is not related to d3, I'm just conveniently using d3 to read
-    // my json file for firebase configuration credentials
+
+    /**
+     * This is not related to d3, I'm just conveniently using d3 to read
+     * my json file for firebase configuration credentials
+    **/
     d3.json("config.json", function(error, data) {
       // Initialize Firebase
       var config = data;
       firebase.initializeApp(config);
     });
+
+    /**
+     * This script is for opening and closing the instructions modal. Borrowed from:
+     * https://www.w3schools.com/howto/tryit.asp?filename=tryhow_css_modal
+    **/
+    var modal = document.getElementById('modal');
+    var btn = document.getElementById("instructions");
+    var span = document.getElementsByClassName("close")[0];
+    btn.onclick = function() {
+      modal.style.display = "block";
+    }
+    span.onclick = function() {
+      modal.style.display = "none";
+    }
+    window.onclick = function(event) {
+      if (event.target == modal) {
+        modal.style.display = "none";
+      }
+    }
   </script>
   <script>
-  // Create svg and initial circles
+
+  /**
+   * This script creates and updates the D3 visualization
+  **/
   var w = 1200;
   var h = 800;
   var margin = {top: 25, right: 175, bottom: 250, left: 100};
@@ -237,7 +229,7 @@
       .attr("transform", "rotate(270)")
       .attr("y",25)
       .attr("x",-350)
-      .text("Hammer Price (log scale): ")
+      .text("Hammer Price (log scale)")
 
     // General Update Pattern
     function updateDataTo(year, enterPos, exitPos) {
@@ -354,7 +346,7 @@
     }
 
     // check which arrow was clicked and update accordingly
-    d3.selectAll("h1").on("click", function () {
+    d3.selectAll("h3").on("click", function () {
       var arrow = d3.select(this).attr("id");
       var l_side = 0;
       var r_side = innerWidth + 75;
