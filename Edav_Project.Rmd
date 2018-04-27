@@ -58,7 +58,7 @@ The main contributor to the analysis around basic information was *Elizabet Doli
 
 ### Overview
 
-This dataset was provided by Arthena (https://arthena.com/), a startup based in New York that uses data to analyze and invest in art. Arthena originally sourced the data from Sotheby’s historical auction data via the scraping of public web pages.  Our raw dataset includes 22711 rows of data from Sotheby's auctions. Each row represents an individual lot from an auction (a lot could be an individual painting, a sculpture, or sometimes even a collection of works).  The raw dataset includes 25 columns of data.  Each column represents a feature related to either that specific lot, the artist of the lot, or the auction where the lot was sold.  Column definitions are listed below by category (Lot, Auction or Artist). For our analysis we also derive new columns from the original raw dataset. The derived column definitions are also listed below. Including these columns we ended with a total of 43 columns of data.  The detailed logic and thought process is described more in the 'Data Quality Analysis' section.
+This dataset was provided by Arthena (https://arthena.com/), a startup based in New York that uses data to analyze and invest in art. Arthena originally sourced the data from Sotheby’s historical auction data via the scraping of public web pages.  Our raw dataset includes 22711 rows of data from Sotheby's auctions. Each row represents an individual lot from an auction (a lot could be an individual painting, a sculpture, or sometimes even a collection of works).  The raw dataset includes 25 columns of data.  Each column represents a feature related to either that specific lot, the artist of the lot, or the auction where the lot was sold.  Column definitions are listed below by category (Lot, Auction or Artist). For our analysis we also derive new columns from the original raw dataset. The derived column definitions are also listed below. Including these columns we ended with a total of 45 columns of data.  The detailed logic and thought process is described more in the 'Data Quality Analysis' section.
 
 ```{r}
 #Read data
@@ -351,7 +351,7 @@ To answer our second set of questions and evaluate the different triggers of var
 
 ```{r}
 ##Hammer Price
-ggplot(art_final, aes(x= hammer_price_bp_usd)) + geom_histogram(aes(y=..density..))  + geom_density(col="red") + xlim(0,1500000) + theme_minimal() +xlab("Price") +ylab("Density") +ggtitle("Hammer Price Distribution")+ theme(plot.title = element_text(hjust = 0.5,face="bold"))
+ggplot(art_final, aes(x= hammer_price_bp_usd)) + geom_histogram(aes(y=..density..))  + geom_density(col="red") + xlim(0,1500000) + theme_minimal() +xlab("Price") +ylab("Density") +ggtitle("Hammer Price Distribution")+ theme(plot.title = element_text(hjust = 0.5,face="bold"))+scale_y_continuous(labels = scales::comma)
 
 ```
 
@@ -379,8 +379,8 @@ MyData <- subset(art_final, select=c( "location", "auction_id", "hammer_price_bp
 MyData5 <- MyData %>% group_by(location)%>% summarise(B=sum(hammer_price_bp_usd)) 
 
 
-p1 <- ggplot(MyData5, aes(x= location, y = B)) + 
-    geom_bar( stat='identity', color="yellow", fill="grey")+labs(y = "Auction Revenue")+labs(x = "Location") + ggtitle("Auction revenue by location") + theme_minimal() + theme(plot.title = element_text(hjust = 0.5,face="bold"))+scale_y_continuous(labels = scales::comma)
+p1 <- ggplot(MyData5, aes(x= location, y = B/1000000)) + 
+    geom_bar( stat='identity', color="yellow", fill="grey")+labs(y = "Auction Revenue ($M)")+labs(x = "Location") + ggtitle("Auction revenue by location") + theme_minimal() + theme(plot.title = element_text(hjust = 0.5,face="bold"))+scale_y_continuous(labels = scales::comma)
 
 ##revenue by year
 
@@ -388,8 +388,8 @@ MyData_1 <- subset(art_final, select=c( "auc_year", "auction_id", "hammer_price_
 
 MyData_1 <- MyData_1 %>% group_by(auc_year)%>% summarise(B=sum(hammer_price_bp_usd)) 
 
-p2<-ggplot(MyData_1, aes(x= auc_year, y = B)) + 
-    geom_bar(stat='identity', color="green", fill="grey")+labs(y = "Auction Revenue")+labs(x = "Year") + ggtitle("Auction revenue by year") + theme_minimal()  + theme(plot.title = element_text(hjust = 0.5,face="bold"))+scale_y_continuous(labels = scales::comma)
+p2<-ggplot(MyData_1, aes(x= auc_year, y = B/1000000)) + 
+    geom_bar(stat='identity', color="green", fill="grey")+labs(y = "Auction Revenue ($M)")+labs(x = "Year") + ggtitle("Auction revenue by year") + theme_minimal()  + theme(plot.title = element_text(hjust = 0.5,face="bold"))+scale_y_continuous(labels = scales::comma)
 
 grid.arrange(p1, p2, nrow = 1)
 
@@ -425,7 +425,7 @@ To conclude exploration of data we created a parallel coordinate plot for auctio
 
 ```{r fig.height = 4, fig.width = 8}
 MyDatas <-subset(art_final, select=c( "percent_in_auction", "auc_year" , "birth_year", "hammer_price_bp_usd", "location"))
-MyDatas<- MyDatas %>%
+MyDatas1<- MyDatas %>%
   filter(birth_year>1400)
 ```
 
@@ -434,7 +434,7 @@ MyDatas<- MyDatas %>%
 library(parcoords)
 #library(httpuv)
 
-parcoords(MyDatas,
+parcoords(MyDatas1,
     rownames = F 
     , brushMode = "1D-axes", alpha =0.5,color = list(
       colorBy = "location", colorScale = htmlwidgets::JS("d3.scale.category10()"))
@@ -618,8 +618,8 @@ MyData_2a <- subset(art_final, select=c( "location", "hammer_price_bp_usd" ))
 
 MyData_2b <- MyData_2a %>% group_by(location)%>% summarise(B=mean(hammer_price_bp_usd)) 
 
-ggplot(MyData_2b, aes(x= location, y = B)) + 
-    geom_bar(stat='identity', color="blue", fill="grey")+labs(y = "Average price")+labs(x = "Location") + ggtitle("Average price by location") + theme_minimal()  + theme(plot.title = element_text(hjust = 0.5,face="bold"))
+ggplot(MyData_2b, aes(x= location, y = B/1000000)) + 
+    geom_bar(stat='identity', color="blue", fill="grey")+labs(y = "Average price ($M)")+labs(x = "Location") + ggtitle("Average price by location") + theme_minimal()  + theme(plot.title = element_text(hjust = 0.5,face="bold"))
 
 ```
 
