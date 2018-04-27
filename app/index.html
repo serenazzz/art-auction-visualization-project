@@ -59,6 +59,10 @@
     #checkbox {
       margin: 0 5px 0 0;
     }
+    .mini {
+      margin: 0 0 0 45px;
+      font-size: 8px;
+    }
   </style>
   <body>
 
@@ -71,6 +75,7 @@
           </div>
           <div class="col-xs-2">
             <h4 id="jitter"><input type="checkbox" id="checkbox"> Add jitter</h4>
+            <a class="mini" href="https://thomasleeper.com/Rcourse/Tutorials/jitter.html" target="_blank">What's that?</a>
           </div>
           <div class="col-xs-4">
             <h1 id="scroll_left" class="glyphicon glyphicon-chevron-left left padding"></h1>
@@ -79,7 +84,7 @@
           </div>
         </div>
         <div class="row">
-          <p id="subtext" class="left"><b>Hammer Prices by Year (USD, 2006-2018)</b></p>
+          <p id="subtext" class="left"><b>Sotheby's Auction Hammer Prices (USD, 2006-2018)</b></p>
         </div>
         <div class="row">
           <div id="color-key"></div>
@@ -121,9 +126,9 @@
     .attr("height", h);
 
   svg.append("rect")
-    .attr("x", margin.left - 75)
+    .attr("x", margin.left - 100)
     .attr("y", margin.top - 25)
-    .attr("width", innerWidth + 150)
+    .attr("width", innerWidth + 175)
     .attr("height", innerHeight + 50)
     .attr("fill", "gray")
     .attr("fill-opacity", .05);
@@ -226,6 +231,13 @@
       .attr("class", "yAxis")
       .attr("transform", `translate (${margin.left}, ${margin.top})`)
       .call(yAxis);
+
+    // yAxis label
+    svg.append("text")
+      .attr("transform", "rotate(270)")
+      .attr("y",25)
+      .attr("x",-350)
+      .text("Hammer Price (log scale): ")
 
     // General Update Pattern
     function updateDataTo(year, enterPos, exitPos) {
