@@ -424,12 +424,9 @@ Based on the graph we identified the theme of each auction and calculated shares
 To conclude exploration of data we created a parallel coordinate plot for auction year, birth year of the artist, lot number in the auction, and hammer price colored by location.
 
 ```{r fig.height = 4, fig.width = 8}
-
-MyDatas <-subset(art_final, select=c( "nth_in_auction", "auc_year" , "birth_year", "hammer_price_bp_usd", "location"))
-
-
-library(GGally)
-ggparcoord(MyDatas, columns = 1:(ncol(MyDatas)-1), scale = "uniminmax", groupColumn = "location", alphaLines =0.2) 
+MyDatas <-subset(art_final, select=c( "percent_in_auction", "auc_year" , "birth_year", "hammer_price_bp_usd", "location"))
+MyDatas<- MyDatas %>%
+  filter(birth_year>1400)
 ```
 
 ```{r fig.height = 4, fig.width =10}
@@ -443,7 +440,7 @@ parcoords(MyDatas,
       colorBy = "location", colorScale = htmlwidgets::JS("d3.scale.category10()"))
     ) 
 ```
-
+From this chart, we can see that most of New York's lots have author born after 1900. However, other than that, we can't read much valuable inforamtion in this graph as the correlations are not strong enough and lines are overlapping.
 
 ## Do Certain Lot Attributes Result in Higher Price?
 ### Lot Titles
@@ -489,22 +486,22 @@ Without surprise, "untitled" indeed are the most popular word artists tend to us
 ```{r}
 library(vcd)
 df1 <- df1 %>% 
-  dplyr::mutate(hammer_price_bp_usd_range = forcats::fct_relevel(hammer_price_bp_usd_range, "<$50,000"))%>%
-  dplyr::mutate(hammer_price_bp_usd_range = forcats::fct_relevel(hammer_price_bp_usd_range, "<$500,000"))%>%
-   dplyr::mutate(hammer_price_bp_usd_range = forcats::fct_relevel(hammer_price_bp_usd_range, "$500,000+"))
+  dplyr::mutate(hammer_price_bp_usd_range = forcats::fct_relevel(hammer_price_bp_usd_range, "<$50K"))%>%
+  dplyr::mutate(hammer_price_bp_usd_range = forcats::fct_relevel(hammer_price_bp_usd_range, "<$500K"))%>%
+   dplyr::mutate(hammer_price_bp_usd_range = forcats::fct_relevel(hammer_price_bp_usd_range, "$500K+"))
 
 vcd::mosaic(hammer_price_bp_usd_range~is_untitled, direction = c("v", "h"),df1,
        gp = gpar(fill = c("lightyellow", "lightpink")),
                  labeling = labeling_border(rot_labels = c(0, 45),pos_labels="center"))
 ```
 
-In the above plot, "1" indicates the lot has "untitled" in it and "0" otherwise. Analyzing the mosaic plot above, we can see that "untitled" actually result in a relatively lower price as less "untitled" lots are in the range "$500,000+" while more "untitled" lots are in the lowest range. If the higher prices cannot explain the common use of "untitled", what can?
+In the above plot, "1" indicates the lot has "untitled" in it and "0" otherwise. Analyzing the mosaic plot above, we can see that "untitled" actually result in a relatively lower price as fewer "untitled" lots are in the range "$500,000+" while more "untitled" lots are in the lowest range. If the higher prices cannot explain the common use of "untitled", what can?
 
-We guess that contemporary  artists tend to name their arts "untitled". To explore this, we put together the auction titles where "untitled" works are presented the most and labeled them with art type. 
+Next, we hypothesize that contemporary artists tend to name their arts "untitled". To explore this, we put together the auction titles where "untitled" works are presented the most and labeled them with art type. 
 
-#### Are "untitled" work mostly contemprary? 
+#### Are "untitled" works mostly contemporary? 
 
-```{r, fig.width=5}
+```{r fig.width=11}
 untitle_ratio = read.csv("untitle_ratio.csv", header=TRUE)
 #tempstr <-  strtrim(untitle_ratio$auc_title, 20)
 #untitle_ratio$auc_title <- tempstr
@@ -512,7 +509,7 @@ untitle_ratio$is_contemporary = as.factor(untitle_ratio$is_contemporary)
 ggplot(data=untitle_ratio, aes(x=reorder(auc_title,ratio), y=ratio,fill=is_contemporary))+geom_bar(stat="identity")+coord_flip() + xlab("Auction Title") + ylab("Ratio") +ggtitle("Auction Titles Based on their Ratio of Occurance")
 ```
 
-Of the top 20 auctions that have highest "untitled" ratio, we see that contemporary auction is just slightly more than non-contemporary auction. In fact, by looking at auction names of non-contemporary auctions, we realize that smaller pieces of art (such as decoration, furnitures) tend to have "untitled" in their title as well! Perhaps those contribute mostly to the fact that "untitled" work have relatively lower price.
+Of the top 20 auctions that have the highest "untitled" ratio, we see that contemporary auctions are just slightly greater than non-contemporary auctions. In fact, by looking at auction names of non-contemporary auctions, we realize that smaller pieces of art (such as decoration, furnitures) tend to have "untitled" in their title as well! Perhaps those contribute mostly to the fact that "untitled" work have relatively lower prices.
 
 ### Does the era of the lot affect its price?
 
@@ -522,12 +519,19 @@ Here, we will plot the hammer price against artists' birth years. Note that we a
 df3 <- df1 %>% 
   filter(df1$birth_year>1700)
 ggplot(df3, aes(birth_year,hammer_price_bp_usd))  + 
-  geom_smooth(method='lm',formula=y ~ poly(x, 3))+
+  geom_smooth(method='lm',formula=y ~ poly(x, 3),color="orange")+
   geom_point(alpha = .1)  + 
-  theme_grey(10)+scale_y_log10()+  geom_density_2d(bins = 5)
+  theme_bw()+scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x),
+   labels = scales::trans_format("log10", scales::math_format(10^.x)))+geom_density_2d(bins = 5, color="orange")+
+    scale_x_continuous(breaks = seq(min(df3$birth_year), max(df3$birth_year),10))+
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+  xlab("Author Birth Year")+
+  ylab("Hammer Price")+
+  ggtitle("Lot Hammer Price vs Author Birth Year")
+
 ```
 
-From the above chart, we can see that modern pieces have larger variance. We'd like to try a boxplot to capture this feature.
+From the above chart, we can see that modern pieces have larger variance. We'd like to try a box plot to capture this feature.
 
 ```{r}
 #box plot price vs year
@@ -535,13 +539,13 @@ ggplot(df3, aes(auth_era, hammer_price_bp_usd)) +
   geom_boxplot()+theme(axis.text.x = element_text(angle = 90, hjust = 1))+scale_y_log10() +xlab("Author's Era") +ylab("Price") +ggtitle("Author's Era vs Price of Their Work")
 ```
 
-We notice that for certain era (e.g. 1750), there are no pieces sold. There are also more outliers for authors born 1900 - 1980. However, due to the complex change in average price over every 10 years, this box plot looks messy overall. Therefore, we decide to only include the scatter plot as that contains the information more straightforward.
+We notice that for certain eras (e.g. 1750), there are no pieces sold. There are also more outliers for authors born 1900 - 1980. However, due to the complex change in average price over every 10 years, this box plot looks messy overall. Therefore, we decided to only include the scatter plot as that contains the information more straightforward.
 
-## Do Certain Extrernal Factors Result in Higher Price?
+## Do Certain External Factors Result in Higher Price?
 
 ###Does the Order Matter?
 
-In general, there are a lot of lots in each auction. In our dataset, the average lot numbers per auction is 357. With the large amount of lots being auctioned, we assume that the most valuable pieces get presented early in the auction. To validate this idea, we normalized the order of lots presented in each auction and plot it against the hammer price.
+In general, there are many lots in each auction. In our dataset, the average number of lots per auction is 357. With the large amount of lots being auctioned, we assume that the most valuable pieces get presented early in the auction. To validate this idea, we normalized the order of lots presented in each auction and plot it against the hammer price.
 
 ```{r}
 ggplot(df1, aes(percent_in_auction,hammer_price_bp_usd))  + 
@@ -554,7 +558,7 @@ ggplot(df1, aes(percent_in_auction,hammer_price_bp_usd))  +
 ### Is there an impact from the financial crisis?
 
 
-Let's start by looking at the average lot prices of Sothebeys on a monthly scale.
+Let's start by looking at the average lot prices of Sotheby's on a monthly scale.
 
 ```{r}
 df1$auc_ymd <- as.Date(df1$auc_year_month_date)
@@ -562,7 +566,7 @@ art_yearfin <- df1 %>% group_by(month=lubridate::floor_date(auc_ymd, "month")) %
 ggplot() +geom_line(data=art_yearfin, aes(x=month, y=revenue/1000000))+ggtitle("Financial Crisis' Effect on average lot price ($M)")+ylab("Average Price ($M)")+xlab("Year")+theme(axis.text.x = element_text(angle = 45, hjust = 1))+scale_y_log10() +theme_bw()
 ```
 
-It appears that the monthly scale is not very helpful in determining the effect because of the different fluctuations around each auction. Perhaps looking at the average price with a little less granularity will help? Since the monthly scale appears to have too much "noise," we will redraw the graph looking at a yearly scale instead. Our guess is that we are supposed to see a significant drop around the time of the financial crisis. 
+It appears that the monthly scale is not very helpful in determining the effect because of the different fluctuations around each auction. Perhaps looking at the average price with a little less granularity will help? Since the monthly scale appears to have too much "noise," we redrew the graph looking at a yearly scale instead. Our guess was that we are supposed to see a significant drop around the time of the financial crisis. 
 
 ```{r}
 art_finance <- art_final[c("auc_year", "auc_month", "location","hammer_price_bp_usd")] %>% filter(!is.na(hammer_price_bp_usd))
@@ -570,7 +574,7 @@ art_yearfin <- art_finance %>% group_by(auc_year) %>% summarise(av_revenue =mean
 ggplot(art_yearfin, aes(x=auc_year, y=as.numeric(av_revenue/1000000))) +geom_line(col="darkblue")+ggtitle("Financial Crisis' Effect on Average Auction Price ($M)")+ylab("Average Price ($M)")+xlab("Year") +theme_bw()
 ```
 
-Indeed, we are seeing a big dip around late 2010. It may be surprising to see that it took some time for the effect to reach the auction houses. Nonetheless, when thinking back on the world-wide timeline of the Financial Crisis' effect, it did take a few years for it to reach other industries outside of finance. 
+Indeed, we observe a big dip around late 2010. It may be surprising to see that it took some time for the effect to reach the auction houses. Nonetheless, when thinking back on the global time line of the Financial Crisis' effect, it did take a few years for it to reach other industries outside of finance. 
 
 Next, let us explore the same effect on the total revenue and see if the same pattern holds.
 
@@ -580,14 +584,14 @@ art_yearfin <- art_finance %>% group_by(auc_year) %>% summarise(revenue = sum(ha
 ggplot(art_yearfin, aes(x=auc_year, y=as.numeric(revenue/1000000))) +geom_line(col="darkblue")+ggtitle("Financial Crisis' Effect on Auction Revenue ($M)")+ylab("Revenue ($M)")+xlab("Year")+theme_bw()
 ```
 
-We can easily tell that the two graphs are very similar and the total revenue did experience the same drop. Perhaps there are certain locations that are skewing some of the data. Let us try to facet the data by location and see if that could present us with a better outlook. We will be excluding Dubai and Doha due to lack of data for hammer prices (as shows in the data quality part).
+We can easily tell that the two graphs are very similar and that total revenue did experience the same drop. Perhaps there are certain locations that are skewing some of the data. Let us try to facet the data by location and see if that could present us with a better outlook. We will be excluding Dubai and Doha due to lack of data for hammer prices (as shows in the data quality part).
 
 ```{r}
 art_locfin <- art_finance %>% group_by(auc_year, location) %>% summarise(av_revenue = mean(hammer_price_bp_usd)) %>% filter(location %in%  c("NEW YORK", "LONDON", "PARIS", "MILAN"))
 ggplot(art_locfin, aes(x=auc_year, y=as.numeric(av_revenue/1000000))) +geom_line(col="darkblue")+ggtitle("Financial Crisis' Effect on Average Auction Price ($M)")+ylab("Average Price ($M)")+xlab("Year") + facet_wrap(~location, scales ="free_y")+theme_bw()
 ```
 
-We notice a consistent drop in revenue across all locations above starting 2010. Therefore, our original hypothesis must be correct: the financial crisis did have an effect on the auction revenue across the world (specifically significant drops are observed in New York and Hong Kong). 
+We notice a consistent drop in revenue across all locations above starting 2010. Therefore, our original hypothesis seems correct: the financial crisis did have an effect on the auction revenue across the world (specifically significant drops are observed in New York and Hong Kong). 
 
 ###Does Season Matter?
 
@@ -619,21 +623,19 @@ ggplot(MyData_2b, aes(x= location, y = B)) +
 
 ```
 
-From the graph it can be seen that Milan, London and New York have the highest average lot price. Which confirms our assumption from part 1 that New York ansd London are the main hubs for art exchange. 
+From the graph it can be seen that Milan, London and New York have the highest average lot price. Which confirms our assumption from part 1 that New York and London are the main hubs for art exchange. 
 
 # Executive Summary
 
-The explatory visualization part of the project allowed us to dive deep around our original questions of interest. We used the main analysis to narrow down some of the most interesting findings in relation to our dataset.
+The explanatory visualization part of the project allowed us to dive deep around our original questions of interest. We used the main analysis to narrow down some of the most interesting findings in relation to our dataset.
 
 Next, we will present these findings with graphs in following summary:
 
-## 1. Art pieces created in the 20th centry on average are sold at a higher price.
+## 1. Art pieces created in the 20th century on average are sold at a higher price.
 
 There are more lots sold where their authors are born in the 20th century, specifically in 1900s,1930s and 1960s. For simplicity, we call them "modern" pieces and call the lots whose authors were born before 1900 "older" pieces. From the graph, we can see that modern pieces have higher prices on average while having larger variance too. One plausible explanation is that the price range and values for contemporary art are more likely to uneven due to the nature of the contemporary art.
 
 ```{r ECHO=FALSE}
-df3 <- df1 %>% 
-  filter(df1$birth_year>1700)
 ggplot(df3, aes(birth_year,hammer_price_bp_usd))  + 
   geom_smooth(method='lm',formula=y ~ poly(x, 3),color="orange")+
   geom_point(alpha = .1)  + 
@@ -686,13 +688,20 @@ ggplot(art_locfin, aes(x=auc_year, y=as.numeric(av_revenue/1000000))) +geom_line
 
 In addition, it is important to notice the major climb in prices around 2012-2013. This observation goes in support with our original hypothesis that investors began putting more money into art as a new form of investment after the financial crisis. In all locations (with an exception of Paris), the average lot price has recovered and surpassed the one before the crisis. 
 
-# Interactive Componenet
+# Interactive Component
 
 Link to the interactive part: https://edav-art-viz.firebaseapp.com
 
 ### Description ### 
 
-This view allows users to see all of the lots sold by their price and timeframe. Each color also represents a different location. This visualization supports the project's main hypothesis that location and season significantly affect the auction performance.
+Our interactive visualization is a scatter plot of lot prices over time built with HTML, CSS, Bootstrap and JavaScript; it is hosted on Firebase and can be viewed here:
+https://edav-art-viz.firebaseapp.com/
+
+The visualization allows users to see all of the lots sold according to their price and locations each year. Each color represents a different location, and the black horizontal average line indicates the average hammer price for all lots during the selected year. This visualization supports the project's main hypothesis that location and season significantly affect the auction performance in terms of the prices of works sold.
+
+We built the interactive visualization so that it would be scalable and versatile if we want to add more features in the future. A few things that we had in mind as features but did not implement due to time constraints included taking the average per auction, and connecting these points with a trend line.  We also thought of adding a box plot for each auction that could have been toggled in a similar matter to the jitter feature.  Another feature we had hoped to add was the ability to toggle based on location, which would have allowed users to click each location on or off and show the corresponding lot data points. Finally, our time line only allows for scrolling by year, but ultimately the idea would be to have a continuous scroll and even zoom in and out so the user would have full control over their time frame of analysis.
+
+Lastly, both for the interactive visualization and our analysis on a whole, future work would include extending our project to not only analyze auction data from Sotheby's, but also to analyze data from other auction houses like Christie's and Phillip,s or museums and other online art data sources to see if our conclusions are consistent for these other data sources as well.
 
 ### Instructions ### 
 
