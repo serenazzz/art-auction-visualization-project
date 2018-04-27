@@ -1,5 +1,5 @@
 ---
-title: "Art Project EDAV"
+title: "Exploratory Data Analysis and Visualization for Art Auction Data"
 author: "Alexandra Sudomoeva, Elizabet Doliar, Serena Zhang, Basil Vetas"
 date: "4/26/2018"
 output: html_document
@@ -96,7 +96,7 @@ location: location where the auction was held.  <br/>
 start_date: start date of the auction.  <br/>
 end_date: end date of the auction (same as start date for this dataset).  <br/>
 auc_desc: description of the auction (messy text field - not used for our analysis). <br/>  
-sale_id: unique auction sale id assigned by Sothebys.  <br/>
+sale_id: unique auction sale id assigned by Sothebys.  
 
 **Artist**  
 artist_id: unique id for each artist. <br/> 
@@ -635,8 +635,8 @@ Next, we will present these findings with graphs in following summary:
 There are more lots sold where their authors are born in the 20th century, specifically in 1900s,1930s and 1960s. For simplicity, we call them "modern" pieces and call the lots whose authors were born before 1900 "older" pieces. From the graph, we can see that modern pieces have higher prices on average while having larger variance too. One plausible explanation is that the price range and values for contemporary art are more likely to uneven due to the nature of the contemporary art.
 
 ```{r ECHO=FALSE}
-df3 <- df2 %>% 
-  filter(df2$birth_year>1700)
+df3 <- df1 %>% 
+  filter(df1$birth_year>1700)
 ggplot(df3, aes(birth_year,hammer_price_bp_usd))  + 
   geom_smooth(method='lm',formula=y ~ poly(x, 3),color="orange")+
   geom_point(alpha = .1)  + 
