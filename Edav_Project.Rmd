@@ -1,5 +1,5 @@
 ---
-title: "Art Project EDAV"
+title: "Exploratory Data Analysis and Visualization for Art Auction Data"
 author: "Alexandra Sudomoeva, Elizabet Doliar, Serena Zhang, Basil Vetas"
 date: "4/26/2018"
 output: html_document
@@ -95,8 +95,7 @@ number_of_lots: total number of lots in the auction.  <br/>
 location: location where the auction was held.  <br/>
 start_date: start date of the auction.  <br/>
 end_date: end date of the auction (same as start date for this dataset).  <br/>
-auc_desc: description of the auction (messy text field - not used for our analysis). <br/>  
-sale_id: unique auction sale id assigned by Sothebys.  <br/>
+auc_desc: description of the auction (messy text field - not used for our analysis). <br/>  sale_id: unique auction sale id assigned by Sothebys.
 
 **Artist**  
 artist_id: unique id for each artist. <br/> 
@@ -136,14 +135,14 @@ In this part of the project, we will be exploring the quality of the data provid
 7. Converted all currency to USD to be able to compare pieces sold across different locations. We matched the exchange rate at the time of the sell to properly convert all transactions.
 8. Added 'hammer_price_bp_usd_range' that allocates the hammer prices into 4 ranges.
 
-A complete logic with code can be found here: https://github.com/serenazzz/art-auction-visualizatoin-project/blob/master/Preprocessing_final.ipynb
+A complete logic with code can be found here: https://github.com/serenazzz/art-auction-visualization-project/blob/master/Preprocessing.ipynb
 
 
 ## Data Quality Exploration
 
 Let us start by looking at all the missing values and if there are any general patterns. Since we are dealing with a large amount of rows, we will reduce repeated patterns to one row using the visna function. 
 
-```{r fig.height=3.5}
+```{r fig.height=7}
 #install.packages("extracat")
 library(extracat)
 visna(art_df, sort= "b")
@@ -195,7 +194,7 @@ percent_missing
 
 This leads to a logical question. Are there any other variables that could explain the missing data? Therefore, we also looked at similar graphs while grouping by year and month.
 
-```{r}
+```{r fig.height=10}
 art_year <- art_df %>% gather(attribute, value, -auc_year) 
 year_missing <- art_year %>% group_by(auc_year, attribute) %>%
   summarise(num_na = sum(is.na(value)), total = n()) %>%
@@ -222,7 +221,7 @@ month <-ggplot(month_missing, aes(x = factor(auc_month), y = attribute, fill =
 grid.arrange(year, month)
 ```
 
-It comes as no surprise that older years (2006-2009) would carry a lot of the missing values for features around description and condition. There also looks to be certain periods with relatively clean data: 2012-2013 and 2015-2017. Another interesting observation is the fact that certain seasons (Winter and beginning of Spring) tend to have more missing values than other months.
+It comes as no surprise that older years (2006-2009) would carry a lot of the missing values for features around description and condition (there is no data for 2008). There also looks to be certain periods with relatively clean data: 2012-2013 and 2015-2017. Another interesting observation is the fact that certain seasons (Winter and beginning of Spring) tend to have more missing values than other months (there is no data for July).
 
 Next, let us look at the exact percentages and values for the overall missing data.
 
@@ -262,7 +261,7 @@ auction_id <- percent_missing[1]
 corr <- data.frame(auction_id=auction_id, percent=percent, average = average)
 ggplot(corr, aes(average, percent)) + geom_point(col="blue") +ggtitle("Auction Average Hammer Price vs Percentage of Missing Values") +
   scale_x_log10( breaks = scales::trans_breaks("log10", function(x) 10^x),
-   labels = scales::trans_format("log10", scales::math_format(10^.x)))
+   labels = scales::trans_format("log10", scales::math_format(10^.x)))+ylim(0,0.7)#cutting the y limit since only one point has >70% missing
 ```
 
 There does not seem to be very strong correlation between the two variables. Just a subtle suggestion that auctions with smaller average price tend to have more NAs. Therefore, we will only consider location as the main determinant for missing values around hammer_price_bp. 
@@ -282,13 +281,13 @@ art_final <- art_df %>% filter(!is.na(estimate_low)) %>%
 # Main Analysis (Exploratory Data Analysis)
 
 Our research can be divided into three sections:
-General questions about the auction information, understanding fluctuations in lot prices and deriving general conclusion. 
+General questions about the auction information, understanding fluctuations in lot prices and its correlation with different variables 
 
 ## General Auction Information
 
 We started by asking many questions about possible relationships between variables. The first set of plots will explore the correlation between number of lots sold and year, location and season. We were hoping to notice meaningful trends that can be further explored in subsequent sections. Since we had only a few locations, seasons and years we chose a barchart and excluded duplicate rows by the 'number of lots' column.
 
-```{r fig.height = 4, fig.width = 8}
+```{r fig.height = 4, fig.width = 11}
 library(gridExtra)
 ##Lots by location
 art_info <- subset(art_final, select=c( "location", "number_of_lots" ))
@@ -320,7 +319,7 @@ Graphs above suggest that fall and spring are the most popular seasons to acquir
 
 The next set of graphs will focus on the number of actions by year, locaion and season.
 
-```{r fig.height =4, fig.width = 8}
+```{r fig.height =4, fig.width = 11}
 ##Auctions by location, year, season
 art_info <- subset(art_final, select=c( "auction_id", "location" ))
 art_info <- art_info[!duplicated(art_info$auction_id),]
@@ -346,7 +345,7 @@ ggplot(art_group, aes(x= auc_season, y = B)) +
     geom_bar( stat='identity', color="royalblue", fill="grey")  +labs(x = "Auction season")+labs(y = "Number of auctions") + ggtitle("Number of auctions by season") + theme_minimal() + theme(plot.title = element_text(hjust = 0.5,face="bold"))  
 ```
 
- Plotting the number of auctions based on location, season and year turned out to have similar results to the previous section and confirmed ideas suggested above. Namely, fall and spring are the two main auction seasons. London, New York and Paris are the main locations for art trading. And after 2009 the number of auctions conducted yearly around the world increased significantly. 
+ Plotting the number of auctions based on location, season and year turned out to have similar results to the previous section and confirmed ideas suggested above. Namely, fall and spring are the two main auction seasons. London, New York and Paris are the main locations for art trading while New York has the more lots sold and London has more Auctions. And after 2009 the number of auctions conducted yearly around the world increased significantly. 
  
  
 To answer our second set of questions and see what are the different triggers of variability in art prices we decided to explore fluctuations in Hammer Prices. Therefore, we created a histogram with density curve to visualize the distribution of Hammer Price.
@@ -366,12 +365,12 @@ art_final <-art_final%>%
           filter(abs(art_final$hammer_price_bp_usd - 
                median(art_final$hammer_price_bp_usd)) <=3*sd(art_final$hammer_price_bp_usd))
 
-ggplot(art_final, aes(x= hammer_price_bp_usd)) + geom_histogram(aes(y=..density..))  + geom_density(col="green") + xlim(0,1500000)+ theme_minimal() +xlab("Price") +ylab("Density") +ggtitle("Hammer Price Distribution (New)")+ theme(plot.title = element_text(hjust = 0.5,face="bold"))
+ggplot(art_final, aes(x= hammer_price_bp_usd)) + geom_histogram(aes(y=..density..))  + geom_density(col="blue") + xlim(0,1500000)+ theme_minimal() +xlab("Price") +ylab("Density") +ggtitle("Hammer Price Distribution (New)")+ theme(plot.title = element_text(hjust = 0.5,face="bold"))
 ```
 
 Adjusted hammer price brought our attention to distribution of revenue over time and location. For both plots we chose a bar chart. 
 
-```{r fig.height = 4, fig.width = 8}
+```{r fig.height = 4, fig.width = 11}
 
 ##revenue by location
 
@@ -634,8 +633,8 @@ Next, we will present these findings with graphs in following summary:
 There are more lots sold where their authors are born in the 20th century, specifically in 1900s,1930s and 1960s. For simplicity, we call them "modern" pieces and call the lots whose authors were born before 1900 "older" pieces. From the graph, we can see that modern pieces have higher prices on average while having larger variance too. One plausible explanation is that the price range and values for contemporary art are more likely to uneven due to the nature of the contemporary art.
 
 ```{r ECHO=FALSE}
-df3 <- df2 %>% 
-  filter(df2$birth_year>1700)
+df3 <- df1 %>% 
+  filter(df1$birth_year>1700)
 ggplot(df3, aes(birth_year,hammer_price_bp_usd))  + 
   geom_smooth(method='lm',formula=y ~ poly(x, 3),color="orange")+
   geom_point(alpha = .1)  + 
