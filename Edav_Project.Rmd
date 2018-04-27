@@ -31,7 +31,7 @@ For hundreds of years fine art has been valued by cultures throughout the world 
 
 Each of our team members has a diverse background. In addition to experience as data scientists, a few of us have a background in economics and have worked for financial services and tech  companies. A few of us have also worked in the art industry for galleries or collectors. This topic was a cross-section of our experiences and interests that allowed us to explore timely questions about the prices and dynamics of the fine art market.
 
-From a high level, the questions that intrigued us most were related to knowing more about the auction prices (called hammer price) for pieces of art in terms of different artists, location and time periods. We initially developed a large list of potential questions, and narrowed these down based on viability in terms of the data we had available as well as the scope and time constraints for the project. Some of the specific questions we decided to look at are:
+From a high level, the questions that intrigued us most were related to knowing more about the auction sale prices (called hammer prices) for pieces of art (called lots) in terms of different artists, location and time periods. We initially developed a large list of potential questions, and narrowed these down based on viability in terms of the data we had available as well as the scope and time constraints for the project. Some of the specific questions we decided to look at are:
 
 1. What is the distribution of quantity of lots and auctions by location, year, and season?
 2. What are the lot titles that have higher price or appear more?
@@ -43,22 +43,22 @@ From a high level, the questions that intrigued us most were related to knowing 
 
 ### Team Members & Contributions
 
-Each team meber worked equally hard to bring this project to live. While having weekly progress meetings and brainstorming sessions, we have adopted a divide and concour approach around building graphs and the corresponding write-up. 
+Each team member worked equally hard to bring this project to life. While having weekly progress meetings and brainstorming sessions, we have adopted a divide-and-conquer approach around building graphs and the corresponding write-up. After writing each of their respective sections, all team members contributed to editing and revising the final report.
 
-Introduction as well as Data Description were written by *Basil Vetas*. As a full time employee of Arthena, Basil was also intrumential in helping us collect the dataset used in the project. In addition, Basil worked on the interactive component of the assignment.
+The Introduction as well as Data Description sections were written by *Basil Vetas*. Basil acquired the dataset used in the project, and contributed to data preprocessing. In addition, Basil created the interactive component of the assignment.
 
-Data Quality analysis as well as some of the clean-up was performed by *Alexandra Sudomoeva*. Alexandra also built visualizations for the Financial Crisis' impact in the main analysis. Lastly, she assisted in writing the instructions for the interactive component. 
+Data Quality Analysis as well as some of the data preprocessing was performed by *Alexandra Sudomoeva*. Alexandra also built visualizations for the Financial Crisis' impact in the main analysis. Lastly, she assisted in writing the instructions for the interactive component. 
 
-*Serena Zhang* worked on data preprocessing and the main analysis as well as the executive summary. Her analysis included auction price correlation with lot titles, artist's era, order in auction, season and location. 
+*Serena Zhang* did the majority of the data preprocessing, and also worked on the main analysis as well as the Executive Summary. Her analysis included auction price correlation with lot titles, artist's era, order in auction, season and location. 
 
-The main contributor to the analysis around basic information was *Elizabet Doliar*. She also worked at analyzing project titles and creating an auction price summary by building a parrallel coordinates plot. Lastly, Elizabet helped put together the executive summary.
+The main contributor to the analysis around basic information was *Elizabet Doliar*. She also worked at analyzing project titles and creating an auction price summary by building a parallel coordinates plot. Lastly, Elizabet helped put together the executive summary.
 
 
 # Data Description
 
 ### Overview
 
-This dataset was provided by Arthena (https://arthena.com/). It was sourced from Sotheby’s historical auction data via the scraping of public web pages.  The raw dataset includes 22711 rows of data. Each row represents an individual lot from an auction (a lot could be an individual painting, a sculpture, or sometimes even a collection of works).  The raw dataset includes 25 columns of data.  Each column represents a feature related to either that specific lot, the artist of the lot, or the auction where the lot was sold.  Column definitions are listed below by category (Lot, Auction or Artist). For our analysis we also derive new columns from the original raw dataset. The derived column definitions are also listed below. Including these columns we ended with a total of 43 columns of data.  The detailed logic and thought process is described more in the 'Data Quality Analysis' section.
+This dataset was provided by Arthena (https://arthena.com/), a startup based in New York that uses data to analyze and invest in art. Arthena originally sourced the data from Sotheby’s historical auction data via the scraping of public web pages.  Our raw dataset includes 22711 rows of data from Sotheby's auctions. Each row represents an individual lot from an auction (a lot could be an individual painting, a sculpture, or sometimes even a collection of works).  The raw dataset includes 25 columns of data.  Each column represents a feature related to either that specific lot, the artist of the lot, or the auction where the lot was sold.  Column definitions are listed below by category (Lot, Auction or Artist). For our analysis we also derive new columns from the original raw dataset. The derived column definitions are also listed below. Including these columns we ended with a total of 43 columns of data.  The detailed logic and thought process is described more in the 'Data Quality Analysis' section.
 
 ```{r}
 #Read data
@@ -124,23 +124,23 @@ hammer_price_bp_usd_range: factor of bucketed hammer price ranges in usd.  <br/>
 
 ## Preprocessing
 
-In this part of the project, we will be exploring the quality of the data provided for the auction data. Before analyzing the overall quality, a simple preprocessing has been conducted in Python that included the following steps:
+In this part of the project, we will be exploring the quality of the data provided for the auction data. Before analyzing the overall quality, a simple preprocessing was conducted in Python that included the following steps:
 
 1. Since 'Start Date' and 'End Date' are always the same within the dataset, we decided to only use 'Start Date' for the time when the auction occurred. Converted the column to DateTime type.
 2. Based on 'Start Date' column, we added columns for normalized year, month, and season.
-3. The "Title" column accepted a varity of title across different languages. We added a new column to indicate whether the piece is "untitled" while checking for the top 5 most common languages used: Italian, Dutch, English, French, Spanish, German.
+3. The "Title" column accepted a variety of title across different languages. We added a new column to indicate whether the piece is "untitled" while checking for the top 5 most common languages used: Italian, Dutch, English, French, Spanish, German.
 4. Created a new column 'nth_in_auction' that would break the order of the auction into 100 tiles and a column 'percent_in_auction' to show the percentage of the order within a specific auction.
 5. Added 'Average Estimate' column to reflect the average price estimation between the high and the low
 6. Added column 'auth_era' to group author's birth year for every 10 years.
 7. Converted all currency to USD to be able to compare pieces sold across different locations. We matched the exchange rate at the time of the sell to properly convert all transactions.
 8. Added 'hammer_price_bp_usd_range' that allocates the hammer prices into 4 ranges.
 
-A complete logic with code can be found here: https://github.com/serenazzz/art-auction-visualization-project/blob/master/Preprocessing.ipynb
+The complete preprocessing python notebook file can be found here: https://github.com/serenazzz/art-auction-visualization-project/blob/master/Preprocessing.ipynb
 
 
 ## Data Quality Exploration
 
-Let us start by looking at all the missing values and if there are any general patterns. Since we are dealing with a large amount of rows, we will reduce repeated patterns to one row using the visna function. 
+We began by looking at all the missing values and if there are any general patterns. Since we were dealing with a large amount of rows, we reduced repeated patterns to one row using the visna function. 
 
 ```{r fig.height=7}
 #install.packages("extracat")
@@ -150,7 +150,7 @@ visna(art_df, sort= "b")
 
 Looking at the output above, we can conclude that the overall state of the dataset is relatively good. The second most common pattern has no missing values while the two most "problematic" features appear to be death_year and birth_year.
 
-One important observation we will need to be careful about during further analysis is a relatively significant amount of missing values under hammer_price_bp feature. We have explored qualitative reasons behind the missing values in that category with the provider of the data. After careful observation, we found out that the missing values are actually driven by two locations that might have less strict regulations around data governance (Doha and Dubai). The high number of NAs in New York is left unidentified. This observation is outlined in the table below.
+One important observation we were careful about during further analysis is the fact that a relatively significant amount of missing values under hammer_price_bp feature. We have explored qualitative reasons behind the missing values in that category with the provider of the data. After careful observation, we found out that the missing values are actually caused by two auction locations that might have less strict regulations around data governance (Doha and Dubai). The high number of NAs in New York is left unidentified. This observation is outlined in the table below.
 
 ```{r}
 art_price <- art_df[, c("location", "hammer_price_bp")]
@@ -161,7 +161,7 @@ percent_missing <- art_price %>% group_by(location) %>%
 percent_missing 
 ```
 
-Let's also look at the percentage of missing value by location for all atributes to check if other features were impacted. 
+We also looked at the percentage of missing value by location for all attributes to check if other features were impacted. 
 
 ```{r}
 #install.packages("viridis")
@@ -179,7 +179,7 @@ ggplot(percent_missing, aes(x = location, y = attribute, fill = percent_na)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
-This map allows us to see that some features' missing values like hammer_price_bp, condition, and birth year are actually only missing at a high rate in certain locations. 
+This map allows us to see that the missing values for some features like hammer_price_bp, condition, and birth_year are actually only missing at a high rate in certain locations. 
 
 Indeed, when looking at the table below, the overall percentage of missing values across different locations varies quite significantly. Amsterdam is the top location with most missing values (8% of total). Therefore, we can speculate that this data could be MAR (missing at random) depending on a location feature.
 
@@ -221,7 +221,7 @@ month <-ggplot(month_missing, aes(x = factor(auc_month), y = attribute, fill =
 grid.arrange(year, month)
 ```
 
-It comes as no surprise that older years (2006-2009) would carry a lot of the missing values for features around description and condition (there is no data for 2008). There also looks to be certain periods with relatively clean data: 2012-2013 and 2015-2017. Another interesting observation is the fact that certain seasons (Winter and beginning of Spring) tend to have more missing values than other months (there is no data for July).
+It comes as no surprise that older years (2006-2009) carry a lot of the missing values for features around description and condition (there is no data for 2008). There also looks to be certain periods with relatively clean data: 2012-2013 and 2015-2017. Another interesting observation is the fact that certain seasons (Winter and beginning of Spring) tend to have more missing values than other months (there is no data for July).
 
 Next, let us look at the exact percentages and values for the overall missing data.
 
@@ -244,7 +244,7 @@ percent_missing %>% filter(percent_na>=0.4)
 
 Looking at the data table, there is a significant number of auctions that are missing more than 40% of the price data (sometimes even 100%). Therefore, it must be that not only the locations but also the auction itself is a determining factor in missing hammer price value. 
 
-Lastly, we would like to check for correlation between average hammer_price_bp and percentage of missing values (since it is the one feature that matters the most in our analysis and is most prime to such correlations). Could it be that very high/low lots are simply not reported and, therefore, are missing more?
+Lastly, we checked for a correlation between average hammer_price_bp and percentage of missing values (since it is the one feature that matters the most in our analysis and is most susceptible to such correlations). Could it be that very high/low lots are simply not reported and, therefore, are missing more?
 
 ```{r}
 art_auction <- art_df[, c("auction_id", "hammer_price_bp")] %>% arrange(auction_id)
@@ -264,9 +264,9 @@ ggplot(corr, aes(average, percent)) + geom_point(col="blue") +ggtitle("Auction A
    labels = scales::trans_format("log10", scales::math_format(10^.x)))+ylim(0,0.7)#cutting the y limit since only one point has >70% missing
 ```
 
-There does not seem to be very strong correlation between the two variables. Just a subtle suggestion that auctions with smaller average price tend to have more NAs. Therefore, we will only consider location as the main determinant for missing values around hammer_price_bp. 
+There does not seem to be very strong correlation between the two variables. Just a subtle suggestion that auctions with smaller average price tend to have more NAs. Therefore, we only consider location as the main determinant for missing values around hammer_price_bp. 
 
-Before we move on, let us quickly follow up on the action items from the data quality analysis. 
+Before we move on, let us quickly summarize the findings from the data quality analysis: 
 
 1. filter out NAs for price estimates
 2. take a note to exclude Doha and Dubai fro hammer_price_bp analysis due to low base high NAs
@@ -285,7 +285,7 @@ General questions about the auction information, understanding fluctuations in l
 
 ## General Auction Information
 
-We started by asking many questions about possible relationships between variables. The first set of plots will explore the correlation between number of lots sold and year, location and season. We were hoping to notice meaningful trends that can be further explored in subsequent sections. Since we had only a few locations, seasons and years we chose a barchart and excluded duplicate rows by the 'number of lots' column.
+We started by asking many questions about possible relationships between variables. The first set of plots will explore the correlation between number of lots sold and year, location and season. We were hoping to notice meaningful trends that can be further explored in subsequent sections. Since we had only a few locations, seasons and years we chose a bar chart and excluded duplicate rows by the 'number of lots' column.
 
 ```{r fig.height = 4, fig.width = 11}
 library(gridExtra)
@@ -315,9 +315,9 @@ ggplot(art_group, aes(x= auc_season, y = B)) +
     geom_bar( stat='identity', color="royalblue", fill="grey")  +labs(x = "Auction season")+labs(y = "Total number of lots") + ggtitle("Number of lots sold by season") + theme_minimal() + theme(plot.title = element_text(hjust = 0.5,face="bold"))  
 ```
 
-Graphs above suggest that fall and spring are the most popular seasons to acquire a masterpiece. At the same time, there was a significant increase in number of lots sold since 2010, suggesting that investors started to see the art market as a form of long-term non-liquid investment after the financial crisis of 2008 (we will explore this hypothesis in more detail later in the analysis). The main hubs for art exchanges formed in London, New York and Paris.
+The graphs above suggest that fall and spring are the most popular seasons to acquire a masterpiece. At the same time, there was a significant increase in number of lots sold since 2010, suggesting that investors started to see the art market as a form of long-term non-liquid investment after the financial crisis of 2008 (we will explore this hypothesis in more detail later in the analysis). The main hubs for art exchanges formed in London, New York and Paris.
 
-The next set of graphs will focus on the number of actions by year, locaion and season.
+The next set of graphs will focus on the number of actions by year, location and season.
 
 ```{r fig.height =4, fig.width = 11}
 ##Auctions by location, year, season
@@ -345,10 +345,9 @@ ggplot(art_group, aes(x= auc_season, y = B)) +
     geom_bar( stat='identity', color="royalblue", fill="grey")  +labs(x = "Auction season")+labs(y = "Number of auctions") + ggtitle("Number of auctions by season") + theme_minimal() + theme(plot.title = element_text(hjust = 0.5,face="bold"))  
 ```
 
- Plotting the number of auctions based on location, season and year turned out to have similar results to the previous section and confirmed ideas suggested above. Namely, fall and spring are the two main auction seasons. London, New York and Paris are the main locations for art trading while New York has the more lots sold and London has more Auctions. And after 2009 the number of auctions conducted yearly around the world increased significantly. 
+Plotting the number of auctions based on location, season and year turned out to have similar results to the previous section and confirmed ideas suggested above. Namely, fall and spring are the two main auction seasons. London, New York and Paris are the main locations for art trading while New York has more lots sold and London has more auctions overall. And after 2009 the number of auctions conducted yearly around the world increased significantly. 
  
- 
-To answer our second set of questions and see what are the different triggers of variability in art prices we decided to explore fluctuations in Hammer Prices. Therefore, we created a histogram with density curve to visualize the distribution of Hammer Price.
+To answer our second set of questions and evaluate the different triggers of variability in art prices we decided to explore fluctuations in Hammer Prices. Therefore, we created a histogram with density curve to visualize the distribution of Hammer Price.
 
 ```{r}
 ##Hammer Price
@@ -356,9 +355,9 @@ ggplot(art_final, aes(x= hammer_price_bp_usd)) + geom_histogram(aes(y=..density.
 
 ```
 
-Distribution of Hammer Price is skewed to the right and has a long tail. We believe the reason for this is various price ranges for different groups of lots sold on the market. Variability in price can be explained by difference in art geners (Contemporary vs Renaissance for example), quality, age and popularity of the artwork. These factors can distinguish a masterpiece sold for $135 million like "Portrait of Adele Bloch-Bauer" by Gustav Klimt and Untitled paitning by Mark Rothko sold for only 6.5 million. 
+Distribution of Hammer Price is skewed to the right and has a long tail. We believe the reason for this is various price ranges for different groups of lots sold on the market. Variability in price can be explained by difference in art genres (Contemporary vs Renaissance for example), quality, age and popularity of the artwork. These factors can distinguish a masterpiece sold for $135 million like "Portrait of Adele Bloch-Bauer" by Gustav Klimt and Untitled painting by Mark Rothko sold for only 6.5 million. 
 
-Constracting valuable models in the next parts of our research fully depend on the ability to manipulate hammer price in the right way. We decided to remove the outliers.
+Constructing valuable models in the next parts of our research fully depend on the ability to manipulate hammer price in the right way. We decided to remove the outliers.
 
 ```{r}
 art_final <-art_final%>%
@@ -398,13 +397,13 @@ grid.arrange(p1, p2, nrow = 1)
 
 After the financial crisis world art revenues went up following the assumption that people saw art as a form of investment. In 2013 revenues declined again possibly due to a slow down in the art market and went back up in the following years. London and New York continue to lead the way as the main centers for the exchange of art.
 
-Another question that we thought would help us explore the data - Variability of lots across auctions?
+Another question that we thought would help us explore the data: Variability of lots across auctions?
 
-In the data we had 89 auctions varying in theme, concept and length. We were partcilarly interested in the genrs of the auctions that had the biggest number of lots. We created a clevelend dot plot and filtered by auctions that had more than 200 lots.  
+In the data we had 89 auctions varying in theme, concept and length. We were particularly interested in the genres of auctions that had the largest number of lots. We created a Cleveland dot plot and filtered by auctions that had more than 200 lots.  
 
 ```{r fig.height = 4, fig.width = 6}
 
-##Clevelend dot plot
+##Cleveland dot plot
 MyData2 <-  strtrim(art_final$auc_title, 40)
 art_final$auc_title <- MyData2
 
